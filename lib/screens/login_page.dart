@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'register_page.dart';
+import 'report_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -26,8 +27,28 @@ class _LoginPageState extends State<LoginPage> {
 
     if (response.statusCode == 200) {
       print("Login sucesso");
+      // Tenta extrair o token se existir, ou usa um dummy para teste
+      String token = "dummy_token";
+      try {
+        final body = jsonDecode(response.body);
+        if (body is Map && body.containsKey('token')) {
+          token = body['token'];
+        } else if (body is Map && body.containsKey('access_token')) {
+          token = body['access_token'];
+        }
+      } catch (e) {
+        print("Erro ao parsear token: $e");
+      }
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => ReportPage(token: token)),
+      );
     } else {
       print("Erro no login");
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Falha no login")),
+      );
     }
   }
 
