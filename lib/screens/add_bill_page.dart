@@ -4,8 +4,9 @@ import 'dart:convert';
 
 class AddBillPage extends StatefulWidget {
   final String token;
+  final int userId;
 
-  const AddBillPage({super.key, required this.token});
+  const AddBillPage({super.key, required this.token, required this.userId});
 
   @override
   State<AddBillPage> createState() => _AddBillPageState();
@@ -47,7 +48,7 @@ class _AddBillPageState extends State<AddBillPage> {
       _isLoading = true;
     });
 
-    final url = Uri.parse('https://finance-health-production.up.railway.app/api/bills/1'); 
+    final url = Uri.parse('https://finance-health-production.up.railway.app/api/bills/${widget.userId}'); 
 
     try {
       final response = await http.post(
@@ -67,7 +68,7 @@ class _AddBillPageState extends State<AddBillPage> {
           'installment_count': _isInstallment ? int.tryParse(_installmentCountController.text) : null,
           'paid': 0,
           'payment_method': 'credit_card',
-          'user_id': 1 
+          'user_id': widget.userId 
         }),
       );
 

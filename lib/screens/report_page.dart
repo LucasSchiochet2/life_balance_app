@@ -6,9 +6,10 @@ import '../models/report_model.dart';
 import 'add_bill_page.dart';
 
 class ReportPage extends StatefulWidget {
-  final String token; // Assuming authentication token is passed
+  final String token; 
+  final int userId;
 
-  const ReportPage({super.key, required this.token});
+  const ReportPage({super.key, required this.token, required this.userId});
 
   @override
   State<ReportPage> createState() => _ReportPageState();
@@ -46,7 +47,7 @@ class _ReportPageState extends State<ReportPage> {
         final response = await http.get(
         // The endpoint likely changed to return the monthly list, or it's the same endpoint with changed response
         // User didn't specify URL change, so keeping it similar but assuming it returns the new structure
-        Uri.parse('https://finance-health-production.up.railway.app/api/bills/1'), 
+        Uri.parse('https://finance-health-production.up.railway.app/api/bills/${widget.userId}'), 
         headers: {
             'Content-Type': 'application/json',
             'Authorization': 'Bearer ${widget.token}',
@@ -80,7 +81,7 @@ class _ReportPageState extends State<ReportPage> {
 
     try {
       final response = await http.get(
-        Uri.parse('https://finance-health-production.up.railway.app/api/bills/1/category/$categoryId'),
+        Uri.parse('https://finance-health-production.up.railway.app/api/bills/${widget.userId}/category/$categoryId'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer ${widget.token}',
@@ -148,7 +149,7 @@ class _ReportPageState extends State<ReportPage> {
         onPressed: () async {
             final result = await Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => AddBillPage(token: widget.token)),
+                MaterialPageRoute(builder: (context) => AddBillPage(token: widget.token, userId: widget.userId)),
             );
             if (result == true) {
                 // Refresh data

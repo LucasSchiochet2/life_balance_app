@@ -30,21 +30,33 @@ class _LoginPageState extends State<LoginPage> {
         print("Login sucesso");
         // Tenta extrair o token se existir, ou usa um dummy para teste
         String token = "dummy_token";
+        int userId = 1; // Default
         try {
           final body = jsonDecode(response.body);
-          if (body is Map && body.containsKey('token')) {
-            token = body['token'];
-          } else if (body is Map && body.containsKey('access_token')) {
-            token = body['access_token'];
+          if (body is Map) {
+            if (body.containsKey('token')) {
+              token = body['token'];
+            } else if (body.containsKey('access_token')) {
+              token = body['access_token'];
+            }
+
+            if (body.containsKey('user') && body['user'] is Map && body['user'].containsKey('id')) {
+               var id = body['user']['id'];
+               if (id is int) {
+                 userId = id;
+               } else if (id is String) {
+                 userId = int.tryParse(id) ?? 1;
+               }
+            }
           }
         } catch (e) {
-          print("Erro ao parsear token: $e");
+          print("Erro ao parsear dados de login: $e");
         }
 
         if (!mounted) return;
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => ReportPage(token: token)),
+          MaterialPageRoute(builder: (context) => ReportPage(token: token, userId: userId)),
         );
       } else {
         print("Erro no login");
