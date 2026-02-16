@@ -46,7 +46,7 @@ class _ReportPageState extends State<ReportPage> {
         final response = await http.get(
         // The endpoint likely changed to return the monthly list, or it's the same endpoint with changed response
         // User didn't specify URL change, so keeping it similar but assuming it returns the new structure
-        Uri.parse('http://finance-health.test/api/bills/1'), 
+        Uri.parse('https://finance-health-production.up.railway.app/api/bills/1'), 
         headers: {
             'Content-Type': 'application/json',
             'Authorization': 'Bearer ${widget.token}',
@@ -80,7 +80,7 @@ class _ReportPageState extends State<ReportPage> {
 
     try {
       final response = await http.get(
-        Uri.parse('http://finance-health.test/api/bills/1/category/$categoryId'),
+        Uri.parse('https://finance-health-production.up.railway.app/api/bills/1/category/$categoryId'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer ${widget.token}',
@@ -98,6 +98,8 @@ class _ReportPageState extends State<ReportPage> {
                 allBills.addAll((monthData['bills'] as List).map((i) => Bill.fromJson(i)));
               }
             }
+          }
+          
           // Se não tiver bills dentro de data[], tenta a estrutura antiga
           if (allBills.isEmpty && decoded is Map && decoded.containsKey('data')) {
                if (decoded['data'] is List) {

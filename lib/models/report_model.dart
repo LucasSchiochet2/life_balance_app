@@ -26,15 +26,22 @@ class MonthlyReport {
     required this.bills,
   });
 
+
+  static double _parseToDouble(dynamic value) {
+    if (value is num) return value.toDouble();
+    if (value is String) return double.tryParse(value) ?? 0.0;
+    return 0.0;
+  }
+
   factory MonthlyReport.fromJson(Map<String, dynamic> json) {
     return MonthlyReport(
-      month: json['month'],
-      totalAmount: (json['total_amount'] as num).toDouble(),
-      totalCount: json['total_count'],
-      summaryByCategory: (json['summary_by_category'] as List)
-          .map((i) => CategorySummary.fromJson(i))
-          .toList(),
-      bills: (json['bills'] as List).map((i) => Bill.fromJson(i)).toList(),
+      month: json['month'] ?? '',
+      totalAmount: _parseToDouble(json['total_amount']),
+      totalCount: json['total_count'] ?? 0,
+      summaryByCategory: (json['summary_by_category'] as List?)
+          ?.map((i) => CategorySummary.fromJson(i))
+          .toList() ?? [],
+      bills: (json['bills'] as List?)?.map((i) => Bill.fromJson(i)).toList() ?? [],
     );
   }
 }
@@ -70,7 +77,7 @@ class ReportSummary {
 
   factory ReportSummary.fromJson(Map<String, dynamic> json) {
     return ReportSummary(
-      totalAmount: (json['total_amount'] as num).toDouble(),
+      totalAmount: MonthlyReport._parseToDouble(json['total_amount']),
       totalCount: json['total_count'],
       byCategory: (json['by_category'] as List)
           .map((i) => CategorySummary.fromJson(i))
@@ -98,8 +105,8 @@ class CategorySummary {
     return CategorySummary(
       categoryId: json['category_id'],
       categoryName: json['category_name'],
-      totalAmount: (json['total_amount'] as num).toDouble(),
-      percentage: (json['percentage'] as num).toDouble(),
+      totalAmount: MonthlyReport._parseToDouble(json['total_amount']),
+      percentage: MonthlyReport._parseToDouble(json['percentage']),
       count: json['count'],
     );
   }
@@ -135,7 +142,7 @@ class Bill {
       id: json['id'] as int? ?? 0,
       name: json['name'] ?? 'Sem Nome',
       description: json['description'] ?? '',
-      amount: (json['amount'] as num?)?.toDouble() ?? 0.0,
+      amount: MonthlyReport._parseToDouble(json['amount']),
       dueDate: json['due_date'] ?? '',
       isRecurring: json['is_recurring'] == 1 || json['is_recurring'] == true,
       paid: json['paid'] == 1 || json['paid'] == true,

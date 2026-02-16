@@ -16,38 +16,48 @@ class _LoginPageState extends State<LoginPage> {
   final passwordController = TextEditingController();
 
   Future<void> login() async {
-    final response = await http.post(
-      Uri.parse('http://finance-health.test/api/login'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'email': emailController.text,
-        'password': passwordController.text,
-      }),
-    );
-
-    if (response.statusCode == 200) {
-      print("Login sucesso");
-      // Tenta extrair o token se existir, ou usa um dummy para teste
-      String token = "dummy_token";
-      try {
-        final body = jsonDecode(response.body);
-        if (body is Map && body.containsKey('token')) {
-          token = body['token'];
-        } else if (body is Map && body.containsKey('access_token')) {
-          token = body['access_token'];
-        }
-      } catch (e) {
-        print("Erro ao parsear token: $e");
-      }
-
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => ReportPage(token: token)),
+    try {
+      final response = await http.post(
+        Uri.parse('https://finance-health-production.up.railway.app/api/login'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'email': emailController.text,
+          'password': passwordController.text,
+        }),
       );
-    } else {
-      print("Erro no login");
+
+      if (response.statusCode == 200) {
+        print("Login sucesso");
+        // Tenta extrair o token se existir, ou usa um dummy para teste
+        String token = "dummy_token";
+        try {
+          final body = jsonDecode(response.body);
+          if (body is Map && body.containsKey('token')) {
+            token = body['token'];
+          } else if (body is Map && body.containsKey('access_token')) {
+            token = body['access_token'];
+          }
+        } catch (e) {
+          print("Erro ao parsear token: $e");
+        }
+
+        if (!mounted) return;
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => ReportPage(token: token)),
+        );
+      } else {
+        print("Erro no login");
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Falha no login")),
+        );
+      }
+    } catch (e) {
+      print("Erro de conexão: $e");
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Falha no login")),
+        SnackBar(content: Text("Erro de conexão: $e")),
       );
     }
   }

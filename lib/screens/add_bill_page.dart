@@ -47,7 +47,7 @@ class _AddBillPageState extends State<AddBillPage> {
       _isLoading = true;
     });
 
-    final url = Uri.parse('http://finance-health.test/api/bills/1'); 
+    final url = Uri.parse('https://finance-health-production.up.railway.app/api/bills/1'); 
 
     try {
       final response = await http.post(
