@@ -2,11 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
+import '../models/report_model.dart';
+
 class AddBillPage extends StatefulWidget {
   final String token;
   final int userId;
+  final Bill? billToEdit;
 
-  const AddBillPage({super.key, required this.token, required this.userId});
+  const AddBillPage({
+    super.key, 
+    required this.token, 
+    required this.userId,
+    this.billToEdit,
+  });
 
   @override
   State<AddBillPage> createState() => _AddBillPageState();
@@ -32,6 +40,23 @@ class _AddBillPageState extends State<AddBillPage> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    if (widget.billToEdit != null) {
+      final bill = widget.billToEdit!;
+      _nameController.text = bill.name;
+      _amountController.text = bill.amount.toString();
+      _dueDateController.text = bill.dueDate; // Ensure format is YYYY-MM-DD or handled correctly
+      _descriptionController.text = bill.description;
+      _selectedCategoryId = bill.categoryId;
+      _isRecurring = bill.isRecurring;
+      _isInstallment = bill.isInstallment;
+      // Handle installments if applicable, though the model doesn't seem to have full installment info in Bill
+      // based on previous read_file. Just basic fields for now.
+    }
+  }
+
+  @override
   void dispose() {
     _nameController.dispose();
     _amountController.dispose();
@@ -44,20 +69,47 @@ class _AddBillPageState extends State<AddBillPage> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
+    final isEditing = widget.billToEdit != null;
+    bool updateAll = false;
+
+    // Se estiver editando e for recorrente ou parcela
+    if (isEditing && (widget.billToEdit!.isRecurring || widget.billToEdit!.isInstallment)) {
+        final result = await showDialog<String>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: Text(widget.billToEdit!.isInstallment ? "Atualizar Parcelas" : "Atualizar Recorrência"),
+            content: Text("Esta conta é ${widget.billToEdit!.isInstallment ? 'parcelada' : 'recorrente'}. Como deseja salvar as alterações?"),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, 'cancel'),
+                child: const Text("Cancelar")
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, 'single'),
+                child: const Text("Apenas esta")
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, 'all'),
+                child: const Text("Todas futuras")
+              ),
+            ],
+          ),
+        );
+
+        if (result == 'cancel' || result == null) return;
+        if (result == 'all') updateAll = true;
+    }
+
     setState(() {
       _isLoading = true;
     });
 
-    final url = Uri.parse('https://finance-health-production.up.railway.app/api/bills/${widget.userId}'); 
+    final url = isEditing
+        ? Uri.parse('http://finance-health.test/api/bills/${widget.userId}/${widget.billToEdit!.id}')
+        : Uri.parse('http://finance-health.test/api/bills/${widget.userId}');
 
     try {
-      final response = await http.post(
-        url,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ${widget.token}',
-        },
-        body: jsonEncode({
+      final bodyMap = {
           'name': _nameController.text,
           'amount': double.tryParse(_amountController.text) ?? 0.0,
           'due_date': _dueDateController.text,
@@ -66,23 +118,46 @@ class _AddBillPageState extends State<AddBillPage> {
           'is_recurring': _isRecurring ? 1 : 0,
           'is_installment': _isInstallment ? 1 : 0,
           'installment_count': _isInstallment ? int.tryParse(_installmentCountController.text) : null,
-          'paid': 0,
+          'paid': isEditing ? (widget.billToEdit!.paid ? 1 : 0) : 0,
           'payment_method': 'credit_card',
           'user_id': widget.userId 
-        }),
-      );
+      };
+
+      if (updateAll) {
+        bodyMap['update_all'] = true;
+      }
+
+      final body = jsonEncode(bodyMap);
+
+      final response = isEditing
+          ? await http.put(
+              url,
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ${widget.token}',
+              },
+              body: body,
+            )
+          : await http.post(
+              url,
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ${widget.token}',
+              },
+              body: body,
+            );
 
       if (response.statusCode == 201 || response.statusCode == 200) {
         if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Conta adicionada com sucesso!')),
+                SnackBar(content: Text(isEditing ? 'Conta atualizada!' : 'Conta adicionada com sucesso!')),
             );
             Navigator.pop(context, true); 
         }
       } else {
          if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Erro ao adicionar: ${response.body}')),
+                SnackBar(content: Text('Erro ao ${isEditing ? "atualizar" : "adicionar"}: ${response.body}')),
             );
         }
       }
@@ -102,7 +177,7 @@ class _AddBillPageState extends State<AddBillPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Nova Conta")),
+      appBar: AppBar(title: Text(widget.billToEdit != null ? "Editar Conta" : "Nova Conta")),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(

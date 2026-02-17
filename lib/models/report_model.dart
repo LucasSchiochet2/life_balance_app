@@ -119,6 +119,7 @@ class Bill {
   final double amount;
   final String dueDate;
   final bool isRecurring;
+  final bool isInstallment;
   final bool paid;
   final String paymentMethod;
   final int categoryId;
@@ -131,6 +132,7 @@ class Bill {
     required this.amount,
     required this.dueDate,
     required this.isRecurring,
+    required this.isInstallment,
     required this.paid,
     required this.paymentMethod,
     required this.categoryId,
@@ -145,6 +147,7 @@ class Bill {
       amount: MonthlyReport._parseToDouble(json['amount']),
       dueDate: json['due_date'] ?? '',
       isRecurring: json['is_recurring'] == 1 || json['is_recurring'] == true,
+      isInstallment: json['is_installment'] == 1 || json['is_installment'] == true,
       paid: json['paid'] == 1 || json['paid'] == true,
       paymentMethod: json['payment_method'] ?? 'unknown',
       categoryId: json['category_bill_id'] as int? ?? 0,
