@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../models/report_model.dart';
+import '../utils/background_service.dart';
 import 'login_page.dart';
 import 'add_bill_page.dart';
 import 'cards_page.dart';
@@ -129,6 +130,27 @@ Future<void> fetchBillsByCategory(int categoryId, String month) async {
       appBar: AppBar(
         title: const Text("Relatório Financeiro"),
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications),
+            tooltip: "Testar Notificações",
+            onPressed: () async {
+              ScaffoldMessenger.of(context).showSnackBar(
+                 const SnackBar(content: Text("Verificando contas vencendo..."))
+              );
+              bool hasNotification = await checkForBillsAndNotify();
+              if (hasNotification) {
+                 ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("Notificações enviadas!"))
+                 );
+              } else {
+                 ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("Nenhuma conta para notificar."))
+                 );
+              }
+            },
+          )
+        ],
       ),
       drawer: Drawer(
         child: ListView(

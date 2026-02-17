@@ -101,11 +101,20 @@ class _CardsPageState extends State<CardsPage> {
                             child: Text("Nenhuma fatura encontrada."),
                           )
                         else
-                          ...card.invoices.map((invoice) => ListTile(
-                            title: Text("Fatura: ${invoice.month}"),
-                            trailing: Text("R\$ ${invoice.totalAmount.toStringAsFixed(2)}"),
-                            subtitle: Text("${invoice.count} contas"),
-                          )).toList()
+                          ...card.invoices.map((invoice) {
+                            return ExpansionTile(
+                              title: Text("Fatura: ${invoice.month}"),
+                              subtitle: Text("Total: R\$ ${invoice.totalAmount.toStringAsFixed(2)} (${invoice.count} contas)"),
+                              leading: const Icon(Icons.receipt_long, color: Colors.grey),
+                              children: invoice.bills.map((bill) {
+                                return ListTile(
+                                  contentPadding: const EdgeInsets.only(left: 32, right: 16),
+                                  title: Text(bill.name),
+                                  trailing: Text("R\$ ${bill.amount.toStringAsFixed(2)}"),
+                                );
+                              }).toList(),
+                            );
+                          }).toList()
                      ],
                    ),
                  );

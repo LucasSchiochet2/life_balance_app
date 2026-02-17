@@ -121,6 +121,7 @@ class Bill {
   final bool isRecurring;
   final bool isInstallment;
   final bool paid;
+  final bool notificationEnabled;
   final String paymentMethod;
   final int categoryId;
   final Category? category;
@@ -134,6 +135,7 @@ class Bill {
     required this.isRecurring,
     required this.isInstallment,
     required this.paid,
+    required this.notificationEnabled,
     required this.paymentMethod,
     required this.categoryId,
     this.category,
@@ -149,6 +151,7 @@ class Bill {
       isRecurring: json['is_recurring'] == 1 || json['is_recurring'] == true,
       isInstallment: json['is_installment'] == 1 || json['is_installment'] == true,
       paid: json['paid'] == 1 || json['paid'] == true,
+      notificationEnabled: json['notification_enabled'] == 1 || json['notification_enabled'] == true,
       paymentMethod: json['payment_method'] ?? 'unknown',
       categoryId: json['category_bill_id'] as int? ?? 0,
       category: json['category'] != null ? Category.fromJson(json['category']) : null,

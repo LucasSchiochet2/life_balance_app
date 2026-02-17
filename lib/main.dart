@@ -1,10 +1,28 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:workmanager/workmanager.dart';
+import 'dart:io' show Platform;
+import 'utils/background_service.dart';
 import 'screens/login_page.dart';
 import 'screens/report_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
+    await Workmanager().initialize(
+      callbackDispatcher, 
+      isInDebugMode: true 
+    );
+    
+    await Workmanager().registerPeriodicTask(
+      "1", 
+      taskName, 
+      frequency: const Duration(hours: 24),
+    );
+  }
+
   final prefs = await SharedPreferences.getInstance();
   final token = prefs.getString('token');
   final userId = prefs.getInt('userId');

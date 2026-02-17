@@ -31,6 +31,7 @@ class _AddBillPageState extends State<AddBillPage> {
   bool _isLoading = false;
   bool _isRecurring = false;
   bool _isInstallment = false;
+  bool _notificationEnabled = false;
   int _selectedCategoryId = 1;
   
   String _selectedPaymentMethod = 'money'; // Default. Options: money, credit_card, debit_card
@@ -56,6 +57,7 @@ class _AddBillPageState extends State<AddBillPage> {
       _selectedCategoryId = bill.categoryId;
       _isRecurring = bill.isRecurring;
       _isInstallment = bill.isInstallment;
+      _notificationEnabled = bill.notificationEnabled;
       // Note: Payment details (credit card id etc) would populate here if available in Bill model
     }
   }
@@ -148,6 +150,7 @@ class _AddBillPageState extends State<AddBillPage> {
           'category_bill_id': _selectedCategoryId,
           'is_recurring': _isRecurring ? 1 : 0,
           'is_installment': _isInstallment ? 1 : 0,
+          'notification_enabled': _notificationEnabled ? 1 : 0,
           'installment_count': _isInstallment ? int.tryParse(_installmentCountController.text) : null,
           'paid': isEditing ? (widget.billToEdit!.paid ? 1 : 0) : 0,
           'payment_method': _selectedPaymentMethod,
@@ -337,6 +340,16 @@ class _AddBillPageState extends State<AddBillPage> {
                     setState(() {
                       _isInstallment = val;
                       if (val) _isRecurring = false;
+                    });
+                  },
+                ),
+
+                SwitchListTile(
+                  title: const Text("Notificar Vencimento"),
+                  value: _notificationEnabled,
+                  onChanged: (val) {
+                    setState(() {
+                      _notificationEnabled = val;
                     });
                   },
                 ),
