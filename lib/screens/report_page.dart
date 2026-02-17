@@ -8,6 +8,7 @@ import '../utils/background_service.dart';
 import 'login_page.dart';
 import 'add_bill_page.dart';
 import 'cards_page.dart';
+import 'workout_list_page.dart';
 import '../components/CategoryChart.dart';
 import '../components/SummaryCard.dart';
 import '../components/MonthSelector.dart';
@@ -176,6 +177,17 @@ Future<void> fetchBillsByCategory(int categoryId, String month) async {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => CardsPage(token: widget.token, userId: widget.userId)),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.fitness_center),
+              title: const Text('Treinos'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => WorkoutListPage(token: widget.token, userId: widget.userId)),
                 );
               },
             ),
