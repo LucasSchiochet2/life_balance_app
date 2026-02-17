@@ -1,9 +1,12 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../models/report_model.dart';
+import 'login_page.dart';
 import 'add_bill_page.dart';
+import 'cards_page.dart';
 import '../components/CategoryChart.dart';
 import '../components/SummaryCard.dart';
 import '../components/MonthSelector.dart';
@@ -43,8 +46,8 @@ class _ReportPageState extends State<ReportPage> {
   Future<ReportResponse> fetchReport() async {
     try {
       final response = await http.get(
-        // Uri.parse('https://finance-health-production.up.railway.app/api/bills/${widget.userId}'),
-        Uri.parse('http://finance-health.test/api/bills/${widget.userId}'),
+        Uri.parse('https://finance-health-production.up.railway.app/api/bills/${widget.userId}'),
+        // Uri.parse('http://finance-health.test/api/bills/${widget.userId}'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer ${widget.token}',
@@ -55,11 +58,27 @@ class _ReportPageState extends State<ReportPage> {
         final decoded = jsonDecode(response.body);
         return ReportResponse.fromJson(decoded);
       }
+      if (response.statusCode == 401) {
+        // Token expirado ou inválido
+        _logout();
+      }
       throw Exception('Falha ao carregar relatório');
     } catch (e) {
       rethrow;
     }
   }
+
+  Future<void> _logout() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.clear(); // Remove token e userId
+    if (!mounted) return;
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (context) => const LoginPage()),
+      (route) => false,
+    );
+  }
+
   // Adicione o parâmetro String month
 Future<void> fetchBillsByCategory(int categoryId, String month) async {
   setState(() {
@@ -69,8 +88,8 @@ Future<void> fetchBillsByCategory(int categoryId, String month) async {
   });
 
   try {
-    // final url = 'https://finance-health-production.up.railway.app/api/bills/${widget.userId}/category/$categoryId?month=$month';
-    final url = 'http://finance-health.test/api/bills/${widget.userId}/category/$categoryId?month=$month';
+    final url = 'https://finance-health-production.up.railway.app/api/bills/${widget.userId}/category/$categoryId?month=$month';
+    // final url = 'http://finance-health.test/api/bills/${widget.userId}/category/$categoryId?month=$month';
     final response = await http.get(
       Uri.parse(url),
       headers: {
@@ -107,7 +126,49 @@ Future<void> fetchBillsByCategory(int categoryId, String month) async {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Relatório Financeiro"), elevation: 0),
+      appBar: AppBar(
+        title: const Text("Relatório Financeiro"),
+        elevation: 0,
+      ),
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+             DrawerHeader(
+              decoration: BoxDecoration(
+                color: Theme.of(context).primaryColor,
+              ),
+              child: const Text(
+                'Menu',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                ),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.credit_card),
+              title: const Text('Cartões'),
+              onTap: () {
+                Navigator.pop(context); // Close drawer
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => CardsPage(token: widget.token, userId: widget.userId)),
+                );
+              },
+            ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.logout),
+              title: const Text('Sair'),
+              onTap: () {
+                Navigator.pop(context);
+                _logout();
+              },
+            ),
+          ],
+        ),
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
           final result = await Navigator.push(
@@ -289,7 +350,8 @@ Future<void> fetchBillsByCategory(int categoryId, String month) async {
 
   Future<void> _deleteBill(int billId, {bool deleteAll = false}) async {
     try {
-      final baseUrl = 'http://finance-health.test/api/bills/${widget.userId}/$billId';
+      // final baseUrl = 'http://finance-health.test/api/bills/${widget.userId}/$billId';
+      final baseUrl = 'https://finance-health-production.up.railway.app/api/bills/${widget.userId}/$billId';
       final url = deleteAll ? '$baseUrl?delete_all=true' : baseUrl;
 
       final response = await http.delete(

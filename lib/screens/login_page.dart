@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'register_page.dart';
 import 'report_page.dart';
 
@@ -14,12 +15,14 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
+  bool isLoading = false;
 
   Future<void> login() async {
+    setState(() => isLoading = true);
     try {
       final response = await http.post(
-        // Uri.parse('https://finance-health-production.up.railway.app/api/login'),
-        Uri.parse('http://finance-health.test/api/login'),
+        Uri.parse('https://finance-health-production.up.railway.app/api/login'),
+        // Uri.parse('http://finance-health.test/api/login'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'email': emailController.text,
@@ -54,6 +57,11 @@ class _LoginPageState extends State<LoginPage> {
           print("Erro ao parsear dados de login: $e");
         }
 
+        // Salvar dados de login
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('token', token);
+        await prefs.setInt('userId', userId);
+
         if (!mounted) return;
         Navigator.pushReplacement(
           context,
@@ -72,6 +80,8 @@ class _LoginPageState extends State<LoginPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Erro de conexão: $e")),
       );
+    } finally {
+      if (mounted) setState(() => isLoading = false);
     }
   }
 
@@ -94,8 +104,14 @@ class _LoginPageState extends State<LoginPage> {
             ),
             const SizedBox(height: 20),
             ElevatedButton(
-              onPressed: login,
-              child: const Text("Entrar"),
+              onPressed: isLoading ? null : login,
+              child: isLoading
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text("Entrar"),
             ),
             TextButton(
               onPressed: () {

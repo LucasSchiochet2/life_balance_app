@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-
+import '../models/card_model.dart';
 import '../models/report_model.dart';
 
 class AddBillPage extends StatefulWidget {
@@ -33,6 +33,10 @@ class _AddBillPageState extends State<AddBillPage> {
   bool _isInstallment = false;
   int _selectedCategoryId = 1;
   
+  String _selectedPaymentMethod = 'money'; // Default. Options: money, credit_card, debit_card
+  int? _selectedCardId;
+  List<CreditCard> _availableCards = [];
+
   final List<Map<String, dynamic>> _categories = [
     {'id': 1, 'name': 'Alimentação'},
     {'id': 2, 'name': 'Transporte'},
@@ -42,17 +46,42 @@ class _AddBillPageState extends State<AddBillPage> {
   @override
   void initState() {
     super.initState();
+    _fetchCards(); // Fetch cards for selection
     if (widget.billToEdit != null) {
       final bill = widget.billToEdit!;
       _nameController.text = bill.name;
       _amountController.text = bill.amount.toString();
-      _dueDateController.text = bill.dueDate; // Ensure format is YYYY-MM-DD or handled correctly
+      _dueDateController.text = bill.dueDate; 
       _descriptionController.text = bill.description;
       _selectedCategoryId = bill.categoryId;
       _isRecurring = bill.isRecurring;
       _isInstallment = bill.isInstallment;
-      // Handle installments if applicable, though the model doesn't seem to have full installment info in Bill
-      // based on previous read_file. Just basic fields for now.
+      // Note: Payment details (credit card id etc) would populate here if available in Bill model
+    }
+  }
+
+  Future<void> _fetchCards() async {
+    try {
+      final response = await http.get(
+        Uri.parse('https://finance-health-production.up.railway.app/api/cards/${widget.userId}'),
+        // Uri.parse('http://finance-health.test/api/cards/${widget.userId}'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${widget.token}',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(response.body);
+        if (decoded is Map && decoded['data'] is List) {
+           final List data = decoded['data'];
+           setState(() {
+             _availableCards = data.map((json) => CreditCard.fromJson(json)).toList();
+           });
+        }
+      }
+    } catch (e) {
+      print("Erro ao carregar cartões: $e");
     }
   }
 
@@ -103,10 +132,12 @@ class _AddBillPageState extends State<AddBillPage> {
     setState(() {
       _isLoading = true;
     });
-
+    // final url = isEditing
+    //     ? Uri.parse('http://finance-health.test/api/bills/${widget.userId}/${widget.billToEdit!.id}')
+    //     : Uri.parse('http://finance-health.test/api/bills/${widget.userId}');
     final url = isEditing
-        ? Uri.parse('http://finance-health.test/api/bills/${widget.userId}/${widget.billToEdit!.id}')
-        : Uri.parse('http://finance-health.test/api/bills/${widget.userId}');
+        ? Uri.parse('https://finance-health-production.up.railway.app/api/bills/${widget.userId}/${widget.billToEdit!.id}')
+        : Uri.parse('https://finance-health-production.up.railway.app/api/bills/${widget.userId}');
 
     try {
       final bodyMap = {
@@ -119,7 +150,8 @@ class _AddBillPageState extends State<AddBillPage> {
           'is_installment': _isInstallment ? 1 : 0,
           'installment_count': _isInstallment ? int.tryParse(_installmentCountController.text) : null,
           'paid': isEditing ? (widget.billToEdit!.paid ? 1 : 0) : 0,
-          'payment_method': 'credit_card',
+          'payment_method': _selectedPaymentMethod,
+          'credit_card_id': _selectedPaymentMethod == 'credit_card' ? _selectedCardId : null,
           'user_id': widget.userId 
       };
 
@@ -203,7 +235,7 @@ class _AddBillPageState extends State<AddBillPage> {
                 TextFormField(
                   controller: _dueDateController,
                   decoration: const InputDecoration(
-                      labelText: "Data de Vencimento",
+                      labelText: "Data de Vencimento / Compra",
                       suffixIcon: Icon(Icons.calendar_today),
                   ),
                   readOnly: true,
@@ -215,7 +247,8 @@ class _AddBillPageState extends State<AddBillPage> {
                           lastDate: DateTime(2101)
                       );
                       if(pickedDate != null ){
-                          String formattedDate = "${pickedDate.year}-${pickedDate.month.toString().padLeft(2,'0')}-${pickedDate.day.toString().padLeft(2,'0')}";
+                        // Format as YYYY-MM-DD
+                        String formattedDate = "${pickedDate.year}-${pickedDate.month.toString().padLeft(2,'0')}-${pickedDate.day.toString().padLeft(2,'0')}";
                           setState(() {
                              _dueDateController.text = formattedDate;
                           });
@@ -223,6 +256,51 @@ class _AddBillPageState extends State<AddBillPage> {
                   },
                   validator: (value) => value == null || value.isEmpty ? "Campo obrigatório" : null,
                 ),
+                
+                const SizedBox(height: 10),
+
+                // Payment Method Dropdown
+                DropdownButtonFormField<String>(
+                  value: _selectedPaymentMethod,
+                  decoration: const InputDecoration(labelText: "Método de Pagamento"),
+                  items: const [
+                    DropdownMenuItem(value: 'money', child: Text("Dinheiro / Débito / Pix")),
+                    DropdownMenuItem(value: 'credit_card', child: Text("Cartão de Crédito")),
+                  ],
+                  onChanged: (val) {
+                    setState(() {
+                      _selectedPaymentMethod = val!;
+                      // Reset recurrence/installment logic if needed based on payment type
+                      if (val == 'credit_card') {
+                         // Maybe default to single installment if not installment
+                      }
+                    });
+                  },
+                ),
+
+                // Credit Card Selection (Only if credit_card)
+                if (_selectedPaymentMethod == 'credit_card') 
+                   Padding(
+                     padding: const EdgeInsets.only(top: 10.0),
+                     child: DropdownButtonFormField<int>(
+                      value: _selectedCardId,
+                      decoration: const InputDecoration(labelText: "Selecione o Cartão"),
+                      items: _availableCards.map((card) {
+                        return DropdownMenuItem<int>(
+                          value: card.id,
+                          child: Text("${card.name} (Lim: ${card.limit})"),
+                        );
+                      }).toList(),
+                      onChanged: (val) {
+                        setState(() {
+                          _selectedCardId = val;
+                        });
+                      },
+                      validator: (val) => _selectedPaymentMethod == 'credit_card' && val == null ? 'Selecione um cartão' : null,
+                                       ),
+                   ),
+
+                const SizedBox(height: 10),
             
                 DropdownButtonFormField<int>(
                   value: _selectedCategoryId,
