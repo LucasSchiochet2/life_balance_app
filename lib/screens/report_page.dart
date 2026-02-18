@@ -458,7 +458,7 @@ class _BillTile extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
-        leading: Icon(bill.paid ? Icons.check_circle : Icons.pending, color: bill.paid ? const Color(0xFF03A678) : const Color(0xFFF27405)),
+        leading: Icon(bill.paid ? Icons.check_circle : Icons.pending, color: bill.paid ? Colors.green : Colors.orange),
         title: Text(bill.name),
         subtitle: Text(bill.dueDate.split(' ')[0]),
         trailing: Text("R\$ ${bill.amount.toStringAsFixed(2)}", style: const TextStyle(fontWeight: FontWeight.bold)),
