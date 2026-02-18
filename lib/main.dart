@@ -42,6 +42,31 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF02735E),
+          primary: const Color(0xFF02735E),
+          onPrimary: Colors.white,
+          secondary: const Color(0xFF03A678),
+          onSecondary: Colors.white,
+          tertiary: const Color(0xFF7928F5),
+          error: const Color(0xFFF27405),
+          surface: Colors.white, // Keeping surface light for now
+          onSurface: const Color(0xFF014040), // Darkest color for text
+        ),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Color(0xFF02735E),
+          foregroundColor: Colors.white,
+        ),
+        scaffoldBackgroundColor: const Color(0xFFF5F5F5), // Light grey background
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFFF27405), // Orange for buttons
+            foregroundColor: Colors.white,
+          ),
+        ),
+      ),
       home: initialRoute,
     );
   }

@@ -37,6 +37,7 @@ class _ExerciseProgressPageState extends State<ExerciseProgressPage> {
   final _repsController = TextEditingController();
   final _setsController = TextEditingController();
   final _observationController = TextEditingController();
+  double _intensity = 0.0;
 
   @override
   void initState() {
@@ -86,6 +87,7 @@ class _ExerciseProgressPageState extends State<ExerciseProgressPage> {
         'weight': double.tryParse(_weightController.text) ?? 0.0,
         'reps': int.tryParse(_repsController.text) ?? 0,
         'sets': int.tryParse(_setsController.text) ?? 0,
+        'intensity': _intensity,
         'observation': _observationController.text,
       };
 
@@ -176,6 +178,25 @@ class _ExerciseProgressPageState extends State<ExerciseProgressPage> {
                                 ),
                               ],
                             ),
+                            const SizedBox(height: 10),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text("Intensidade: ${_intensity.toStringAsFixed(1)}"),
+                                Slider(
+                                  value: _intensity,
+                                  min: 0,
+                                  max: 10,
+                                  divisions: 20,
+                                  label: _intensity.toString(),
+                                  onChanged: (double value) {
+                                    setState(() {
+                                      _intensity = value;
+                                    });
+                                  },
+                                ),
+                              ],
+                            ),
                             TextFormField(
                               controller: _observationController,
                               decoration: const InputDecoration(labelText: 'Observações'),
@@ -219,6 +240,7 @@ class _ExerciseProgressPageState extends State<ExerciseProgressPage> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text("${log.sets} séries x ${log.reps} reps"),
+                                    Text("Intensidade: ${log.intensity.toStringAsFixed(1)}"),
                                     if (log.observation != null && log.observation!.isNotEmpty)
                                       Text("Obs: ${log.observation}", style: const TextStyle(fontStyle: FontStyle.italic)),
                                   ],
@@ -279,7 +301,7 @@ class _ExerciseProgressPageState extends State<ExerciseProgressPage> {
                                 return FlSpot(e.key.toDouble(), e.value.weight);
                               }).toList(),
                               isCurved: true,
-                              color: Colors.blue,
+                              color: const Color(0xFF02735E),
                               barWidth: 3,
                               dotData: FlDotData(show: true),
                             ),

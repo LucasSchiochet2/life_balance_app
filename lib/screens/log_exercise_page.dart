@@ -20,8 +20,9 @@ class _LogExercisePageState extends State<LogExercisePage> {
   final _dateController = TextEditingController();
   final _weightController = TextEditingController();
   final _repsController = TextEditingController();
-  final _setsController = TextEditingController(); // Not mentioned in prompt but usually needed
+  final _setsController = TextEditingController();
   final _observationController = TextEditingController();
+  double _intensity = 0.0;
   bool _isLoading = false;
 
   @override
@@ -40,6 +41,7 @@ class _LogExercisePageState extends State<LogExercisePage> {
         'weight': double.tryParse(_weightController.text) ?? 0.0,
         'reps': int.tryParse(_repsController.text) ?? 0,
         'sets': int.tryParse(_setsController.text) ?? 0,
+        'intensity': _intensity,
         'observation': _observationController.text,
       };
 
@@ -110,6 +112,25 @@ class _LogExercisePageState extends State<LogExercisePage> {
                       keyboardType: TextInputType.number,
                       validator: (v) => v!.isEmpty ? 'Obrigatório' : null,
                     ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text("Intensidade: ${_intensity.toStringAsFixed(1)}"),
+                  Slider(
+                    value: _intensity,
+                    min: 0,
+                    max: 10,
+                    divisions: 20,
+                    label: _intensity.toString(),
+                    onChanged: (double value) {
+                      setState(() {
+                        _intensity = value;
+                      });
+                    },
                   ),
                 ],
               ),

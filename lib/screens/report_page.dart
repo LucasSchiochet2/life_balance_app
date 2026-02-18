@@ -34,7 +34,11 @@ class _ReportPageState extends State<ReportPage> {
   int selectedMonthIndex = 0;
 
   final List<Color> availableColors = const [
-    Colors.blue, Colors.red, Colors.green, Colors.orange, Colors.purple, Colors.teal,
+    Color(0xFF014040),
+    Color(0xFF02735E),
+    Color(0xFF03A678),
+    Color(0xFFF27405),
+    Color(0xFF7928F5),
   ];
 
   @override
@@ -291,7 +295,7 @@ Future<void> fetchBillsByCategory(int categoryId, String month) async {
             if (bill.description.isNotEmpty) Text("Descrição: ${bill.description}"),
             const SizedBox(height: 10),
             Text("Status: ${bill.paid ? 'Pago' : 'Pendente'}", 
-              style: TextStyle(color: bill.paid ? Colors.green : Colors.orange, fontWeight: FontWeight.bold)),
+              style: TextStyle(color: bill.paid ? const Color(0xFF03A678) : const Color(0xFFF27405), fontWeight: FontWeight.bold)),
           ],
         ),
         actions: [
@@ -307,7 +311,7 @@ Future<void> fetchBillsByCategory(int categoryId, String month) async {
               Navigator.pop(ctx);
               _confirmDelete(bill);
             }, 
-            child: const Text("Excluir", style: TextStyle(color: Colors.red)),
+            child: const Text("Excluir", style: TextStyle(color: Color(0xFFF27405))),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx),
@@ -353,7 +357,7 @@ Future<void> fetchBillsByCategory(int categoryId, String month) async {
             ),
             TextButton(
               onPressed: () => Navigator.pop(ctx, 'all'), 
-              child: const Text("Excluir TODAS", style: TextStyle(color: Colors.red))
+              child: const Text("Excluir TODAS", style: TextStyle(color: Color(0xFFF27405)))
             ),
           ],
         ),
@@ -371,7 +375,7 @@ Future<void> fetchBillsByCategory(int categoryId, String month) async {
           content: Text("Deseja realmente excluir a conta '${bill.name}'?"),
           actions: [
             TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text("Cancelar")),
-            TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text("Excluir", style: TextStyle(color: Colors.red))),
+            TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text("Excluir", style: TextStyle(color: Color(0xFFF27405)))),
           ],
         ),
       );
@@ -454,7 +458,7 @@ class _BillTile extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
-        leading: Icon(bill.paid ? Icons.check_circle : Icons.pending, color: bill.paid ? Colors.green : Colors.orange),
+        leading: Icon(bill.paid ? Icons.check_circle : Icons.pending, color: bill.paid ? const Color(0xFF03A678) : const Color(0xFFF27405)),
         title: Text(bill.name),
         subtitle: Text(bill.dueDate.split(' ')[0]),
         trailing: Text("R\$ ${bill.amount.toStringAsFixed(2)}", style: const TextStyle(fontWeight: FontWeight.bold)),

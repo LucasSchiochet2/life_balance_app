@@ -6,6 +6,7 @@ class ExerciseLog {
   final double weight;
   final int reps;
   final int sets;
+  final double intensity;
   final String? observation;
   final DateTime createdAt;
 
@@ -17,6 +18,7 @@ class ExerciseLog {
     required this.weight,
     required this.reps,
     required this.sets,
+    this.intensity = 0.0,
     this.observation,
     required this.createdAt,
   });
@@ -30,6 +32,9 @@ class ExerciseLog {
       weight: json['weight'] is double ? json['weight'] : double.parse(json['weight'].toString()),
       reps: json['reps'] is int ? json['reps'] : int.parse(json['reps'].toString()),
       sets: json['sets'] is int ? json['sets'] : int.parse(json['sets'].toString()),
+      intensity: json['intensity'] != null 
+          ? (json['intensity'] is double ? json['intensity'] : double.parse(json['intensity'].toString()))
+          : 0.0,
       observation: json['observation'],
       createdAt: DateTime.parse(json['created_at']),
     );

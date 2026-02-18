@@ -42,6 +42,11 @@ class _AddBillPageState extends State<AddBillPage> {
     {'id': 1, 'name': 'Alimentação'},
     {'id': 2, 'name': 'Transporte'},
     {'id': 3, 'name': 'Lazer'},
+    {'id': 4, 'name': 'Saúde'},
+    {'id': 5, 'name': 'Educação'},
+    {'id': 6, 'name': 'Moradia'},
+    {'id': 7, 'name': 'Contas e Assinaturas'},
+    {'id': 8, 'name': 'Outros'},
   ];
 
   @override

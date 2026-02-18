@@ -152,6 +152,7 @@ class ExerciseLog {
   final double weight;
   final int sets;
   final int reps;
+  final double intensity;
   final String? observation;
 
   ExerciseLog({
@@ -160,6 +161,7 @@ class ExerciseLog {
     required this.weight,
     required this.sets,
     required this.reps,
+    this.intensity = 0.0,
     this.observation,
   });
 
@@ -170,6 +172,7 @@ class ExerciseLog {
       weight: (json['weight'] as num?)?.toDouble() ?? 0.0,
       sets: json['sets'] ?? 0,
       reps: json['reps'] ?? 0,
+      intensity: (json['intensity'] as num?)?.toDouble() ?? 0.0,
       observation: json['observation'],
     );
   }

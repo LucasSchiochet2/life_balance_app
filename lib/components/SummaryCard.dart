@@ -19,7 +19,7 @@ class SummaryCard extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               "R\$ ${report.totalAmount.toStringAsFixed(2)}",
-              style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.blue),
+              style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Color(0xFF02735E)),
             ),
             const SizedBox(height: 8),
             Text("${report.totalCount} transações", style: TextStyle(color: Colors.grey[600])),

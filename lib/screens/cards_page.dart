@@ -91,7 +91,7 @@ class _CardsPageState extends State<CardsPage> {
                    elevation: 3,
                    margin: const EdgeInsets.only(bottom: 16),
                    child: ExpansionTile(
-                     leading: const Icon(Icons.credit_card, size: 32, color: Colors.blue),
+                     leading: const Icon(Icons.credit_card, size: 32, color: Color(0xFF02735E)),
                      title: Text(card.name, style: const TextStyle(fontWeight: FontWeight.bold)),
                      subtitle: Text("Limite: R\$ ${card.limit.toStringAsFixed(2)}"),
                      children: [
@@ -105,7 +105,7 @@ class _CardsPageState extends State<CardsPage> {
                             return ExpansionTile(
                               title: Text("Fatura: ${invoice.month}"),
                               subtitle: Text("Total: R\$ ${invoice.totalAmount.toStringAsFixed(2)} (${invoice.count} contas)"),
-                              leading: const Icon(Icons.receipt_long, color: Colors.grey),
+                              leading: const Icon(Icons.receipt_long, color: Color(0xFF014040)),
                               children: invoice.bills.map((bill) {
                                 return ListTile(
                                   contentPadding: const EdgeInsets.only(left: 32, right: 16),

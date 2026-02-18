@@ -29,7 +29,7 @@ class GroupedBillList extends StatelessWidget {
             children: [
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8.0),
-                child: Text(group['month'], style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blue)),
+                child: Text(group['month'], style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF02735E))),
               ),
               ...group['bills'].map<Widget>((bill) => _BillTile(
                   bill: bill,
@@ -69,7 +69,7 @@ class _BillTile extends StatelessWidget {
         onTap: onTap,
         leading: Icon(
           bill.paid ? Icons.check_circle : Icons.pending, 
-          color: bill.paid ? Colors.green : Colors.orange
+          color: bill.paid ? const Color(0xFF03A678) : const Color(0xFFF27405)
         ),
         title: Text(bill.name),
         subtitle: Text(bill.dueDate.split(' ')[0]),

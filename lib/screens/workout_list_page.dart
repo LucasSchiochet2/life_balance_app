@@ -79,7 +79,7 @@ class _WorkoutListPageState extends State<WorkoutListPage> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                        IconButton(
-                         icon: const Icon(Icons.edit, color: Colors.blue),
+                         icon: const Icon(Icons.edit, color: Color(0xFF02735E)),
                          onPressed: () async {
                             final result = await Navigator.push(
                               context,
@@ -96,7 +96,7 @@ class _WorkoutListPageState extends State<WorkoutListPage> {
                          }
                        ),
                        IconButton(
-                         icon: const Icon(Icons.delete, color: Colors.red),
+                         icon: const Icon(Icons.delete, color: Color(0xFFF27405)),
                          onPressed: () => _confirmDelete(workout),
                        ),
                        const Icon(Icons.arrow_forward),
@@ -123,7 +123,7 @@ class _WorkoutListPageState extends State<WorkoutListPage> {
         content: Text("Deseja realmente excluir o treino '${workout.name}'?"),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text("Cancelar")),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text("Excluir", style: TextStyle(color: Colors.red))),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text("Excluir", style: TextStyle(color: Color(0xFFF27405)))),
         ],
       )
     );

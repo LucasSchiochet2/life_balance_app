@@ -58,7 +58,7 @@ class _WorkoutDetailPageState extends State<WorkoutDetailPage> {
                );
             },
             trailing: IconButton(
-              icon: const Icon(Icons.show_chart, color: Colors.blue), // Changed icon to indicate progress/logs
+              icon: const Icon(Icons.show_chart, color: Color(0xFF02735E)), // Changed icon to indicate progress/logs
               onPressed: () {
                  Navigator.push(
                    context,
