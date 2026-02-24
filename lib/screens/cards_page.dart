@@ -86,40 +86,73 @@ class _CardsPageState extends State<CardsPage> {
                padding: const EdgeInsets.all(16),
                itemCount: cards.length,
                itemBuilder: (context, index) {
-                 final card = cards[index];
-                 return Card(
-                   elevation: 3,
-                   margin: const EdgeInsets.only(bottom: 16),
-                   child: ExpansionTile(
-                     leading: const Icon(Icons.credit_card, size: 32, color: Color(0xFF02735E)),
-                     title: Text(card.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                     subtitle: Text("Limite: R\$ ${card.limit.toStringAsFixed(2)}"),
-                     children: [
-                        if (card.invoices.isEmpty)
-                          const Padding(
-                            padding: EdgeInsets.all(16.0),
-                            child: Text("Nenhuma fatura encontrada."),
-                          )
-                        else
-                          ...card.invoices.map((invoice) {
-                            return ExpansionTile(
-                              title: Text("Fatura: ${invoice.month}"),
-                              subtitle: Text("Total: R\$ ${invoice.totalAmount.toStringAsFixed(2)} (${invoice.count} contas)"),
-                              leading: const Icon(Icons.receipt_long, color: Color(0xFF014040)),
-                              children: invoice.bills.map((bill) {
-                                return ListTile(
-                                  contentPadding: const EdgeInsets.only(left: 32, right: 16),
-                                  title: Text(bill.name),
-                                  trailing: Text("R\$ ${bill.amount.toStringAsFixed(2)}"),
-                                );
-                              }).toList(),
-                            );
-                          }).toList()
-                     ],
-                   ),
-                 );
+                 return _CardItem(card: cards[index]);
                },
              ),
+    );
+  }
+}
+
+class _CardItem extends StatefulWidget {
+  final CreditCard card;
+  const _CardItem({Key? key, required this.card}) : super(key: key);
+
+  @override
+  State<_CardItem> createState() => _CardItemState();
+}
+
+class _CardItemState extends State<_CardItem> {
+  bool _showAllInvoices = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final invoices = widget.card.invoices;
+    // Take first 5 or all depending on state
+    final visibleInvoices = _showAllInvoices 
+        ? invoices 
+        : invoices.take(5).toList();
+
+    return Card(
+      elevation: 3,
+      margin: const EdgeInsets.only(bottom: 16),
+      child: ExpansionTile(
+        leading: const Icon(Icons.credit_card, size: 32, color: Color(0xFF02735E)),
+        title: Text(widget.card.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+        subtitle: Text("Limite: R\$ ${widget.card.limit.toStringAsFixed(2)}"),
+        children: [
+          if (invoices.isEmpty)
+             const Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: Text("Nenhuma fatura encontrada."),
+             )
+          else ...[
+             ...visibleInvoices.map((invoice) {
+                return ExpansionTile(
+                  title: Text("Fatura: ${invoice.month}"),
+                  subtitle: Text("Total: R\$ ${invoice.totalAmount.toStringAsFixed(2)} (${invoice.count} contas)"),
+                  leading: const Icon(Icons.receipt_long, color: Color(0xFF014040)),
+                  children: invoice.bills.map((bill) {
+                    return ListTile(
+                      contentPadding: const EdgeInsets.only(left: 32, right: 16),
+                      title: Text(bill.name),
+                      trailing: Text("R\$ ${bill.amount.toStringAsFixed(2)}"),
+                    );
+                  }).toList(),
+                );
+             }).toList(),
+             
+             if (invoices.length > 5)
+               TextButton(
+                 onPressed: () {
+                   setState(() {
+                     _showAllInvoices = !_showAllInvoices;
+                   });
+                 },
+                 child: Text(_showAllInvoices ? "Ver menos" : "Ver mais (${invoices.length - 5} restantes)"),
+               ),
+          ]
+        ],
+      ),
     );
   }
 }

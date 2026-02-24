@@ -13,6 +13,9 @@ import '../components/CategoryChart.dart';
 import '../components/SummaryCard.dart';
 import '../components/MonthSelector.dart';
 import '../components/GroupedBillList.dart';
+import '../models/monthly_spend_model.dart';
+import '../components/SalaryProgressBar.dart';
+
 class ReportPage extends StatefulWidget {
   final String token;
   final int userId;
@@ -25,6 +28,7 @@ class ReportPage extends StatefulWidget {
 
 class _ReportPageState extends State<ReportPage> {
   late Future<ReportResponse> futureReport;
+  late Future<List<MonthlySpend>> futureMonthlySpend;
 
   // Estados de Filtro
   int? touchedIndex;
@@ -45,9 +49,37 @@ class _ReportPageState extends State<ReportPage> {
   void initState() {
     super.initState();
     futureReport = fetchReport();
+    futureMonthlySpend = fetchMonthlySpend();
   }
 
   // --- API CALLS ---
+
+  Future<List<MonthlySpend>> fetchMonthlySpend() async {
+    try {
+      final response = await http.get(
+        Uri.parse('https://finance-health-production.up.railway.app/api/monthly-spend/${widget.userId}'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${widget.token}',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final dynamic decoded = jsonDecode(response.body);
+        if (decoded is Map<String, dynamic> && decoded.containsKey('data')) {
+          final List<dynamic> data = decoded['data'];
+          return data.map((e) => MonthlySpend.fromJson(e)).toList();
+        } else if (decoded is List) {
+          return decoded.map((e) => MonthlySpend.fromJson(e)).toList();
+        }
+        return [];
+      }
+      return [];
+    } catch (e) {
+      debugPrint("Erro ao buscar monthly spend: $e");
+      return [];
+    }
+  }
 
   Future<ReportResponse> fetchReport() async {
     try {
@@ -161,18 +193,26 @@ Future<void> fetchBillsByCategory(int categoryId, String month) async {
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
-             DrawerHeader(
-              decoration: BoxDecoration(
-                color: Theme.of(context).primaryColor,
-              ),
-              child: const Text(
-                'Menu',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
+             SizedBox(
+               height: 100, // Altura reduzida
+               child: DrawerHeader(
+                decoration: BoxDecoration(
+                  color: Theme.of(context).primaryColor,
+                ),
+                margin: EdgeInsets.zero,
+                padding: const EdgeInsets.all(16.0),
+                child: const Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Menu',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 24,
+                    ),
+                  ),
                 ),
               ),
-            ),
+             ),
             ListTile(
               leading: const Icon(Icons.credit_card),
               title: const Text('Cartões'),
@@ -250,7 +290,7 @@ Future<void> fetchBillsByCategory(int categoryId, String month) async {
                 ),
                 const SizedBox(height: 16),
                 SummaryCard(report: currentMonthData),
-                const SizedBox(height: 30),
+                const SizedBox(height: 20),
                 const Text("Distribuição por Categoria", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 CategoryChart(
                     categories: currentMonthData.summaryByCategory,
@@ -263,7 +303,59 @@ Future<void> fetchBillsByCategory(int categoryId, String month) async {
                       }
                     },
                 ),
-                const Divider(height: 40),
+                const SizedBox(height: 20),
+                FutureBuilder<List<MonthlySpend>>(
+                  future: futureMonthlySpend,
+                  builder: (context, snapshot) {
+                     if (!snapshot.hasData) return const SizedBox.shrink();
+                     final spendList = snapshot.data!;
+                     
+                     try {
+                        // currentMonthData.month format example: "06/2026" or "2026-06"
+                        int m = 0;
+                        int y = 0;
+                        if (currentMonthData.month.contains('/')) {
+                           final parts = currentMonthData.month.split('/');
+                           if (parts.length >= 2) {
+                             m = int.tryParse(parts[0]) ?? 0;
+                             y = int.tryParse(parts[1]) ?? 0;
+                           }
+                        } else if (currentMonthData.month.contains('-')) {
+                           final parts = currentMonthData.month.split('-');
+                           if (parts.length >= 2) {
+                             y = int.tryParse(parts[0]) ?? 0;
+                             m = int.tryParse(parts[1]) ?? 0;
+                           }
+                        }
+
+                        if (m > 0 && y > 0) {
+                          final match = spendList.firstWhere(
+                            (s) => s.month == m && s.year == y, 
+                            orElse: () => MonthlySpend(
+                              month: m, 
+                              year: y, 
+                              userSalary: 0, 
+                              debitExpensesCurrentMonth: 0, 
+                              creditCardInvoicePreviousMonth: 0, 
+                              totalSpendForMonth: 0, 
+                              spendPercentageOfSalary: "0%"
+                            )
+                          );
+                          
+                          if (match.userSalary > 0) {
+                             return Padding(
+                               padding: const EdgeInsets.only(bottom: 20.0),
+                               child: SalaryProgressBar(monthlySpend: match),
+                             );
+                          }
+                        }
+                     } catch (e) {
+                       debugPrint("Erro ao processar monthly spend display: $e");
+                     }
+                     return const SizedBox.shrink();
+                  }
+                ),
+                const Divider(height: 20),
                 _buildListHeader(),
                 const SizedBox(height: 10),
                 isLoadingBills 
@@ -416,6 +508,7 @@ Future<void> fetchBillsByCategory(int categoryId, String month) async {
   void _refreshData() {
     setState(() {
       futureReport = fetchReport();
+      futureMonthlySpend = fetchMonthlySpend();
       // If we are seeing a filtered view, we should probably re-fetch that category too,
       // but simpler to just reset for now or let the user navigate again.
       // Or better: Re-fetch current selection if any.
