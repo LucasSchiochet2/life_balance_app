@@ -1,12 +1,19 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import '../models/card_model.dart';
 
 class AddCardPage extends StatefulWidget {
   final String token;
   final int userId;
+  final CreditCard? cardToEdit;
 
-  const AddCardPage({Key? key, required this.token, required this.userId}) : super(key: key);
+  const AddCardPage({
+    Key? key, 
+    required this.token, 
+    required this.userId, 
+    this.cardToEdit,
+  }) : super(key: key);
 
   @override
   State<AddCardPage> createState() => _AddCardPageState();
@@ -14,17 +21,38 @@ class AddCardPage extends StatefulWidget {
 
 class _AddCardPageState extends State<AddCardPage> {
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
-  final _limitController = TextEditingController();
+  late TextEditingController _nameController;
+  late TextEditingController _limitController;
   
   DateTime? _closingDate;
   DateTime? _expirationDate;
   bool _isLoading = false;
 
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: widget.cardToEdit?.name ?? '');
+    _limitController = TextEditingController(text: widget.cardToEdit?.limit.toString() ?? '');
+    
+    if (widget.cardToEdit != null) {
+      _closingDate = widget.cardToEdit!.closingDate;
+      _expirationDate = widget.cardToEdit!.expirationDate;
+    }
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _limitController.dispose();
+    super.dispose();
+  }
+
   Future<void> _selectDate(BuildContext context, bool isClosing) async {
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: DateTime.now(),
+      initialDate: isClosing 
+          ? (_closingDate ?? DateTime.now())
+          : (_expirationDate ?? DateTime.now()),
       firstDate: DateTime(2000),
       lastDate: DateTime(2101),
     );
@@ -55,20 +83,36 @@ class _AddCardPageState extends State<AddCardPage> {
       final closingStr = "${_closingDate!.year}-${_closingDate!.month.toString().padLeft(2, '0')}-${_closingDate!.day.toString().padLeft(2, '0')}";
       final expirationStr = "${_expirationDate!.year}-${_expirationDate!.month.toString().padLeft(2, '0')}-${_expirationDate!.day.toString().padLeft(2, '0')}";
 
-      final response = await http.post(
-        Uri.parse('https://finance-health-production.up.railway.app/api/cards/${widget.userId}'),
-        // Uri.parse('http://finance-health.test/api/cards'), // Assuming this endpoint for creating cards
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ${widget.token}',
-        },
-        body: jsonEncode({
-          'name': _nameController.text,
-          'limit': double.tryParse(_limitController.text) ?? 0.0,
-          'closing_day': closingStr, 
-          'expiration_date': expirationStr,
-        }),
-      );
+      final body = jsonEncode({
+        'name': _nameController.text,
+        'limit': double.tryParse(_limitController.text) ?? 0.0,
+        'closing_day': closingStr, 
+        'expiration_date': expirationStr,
+        'user_id': widget.userId,
+      });
+
+      http.Response response;
+
+      if (widget.cardToEdit == null) {
+        response = await http.post(
+          Uri.parse('https://finance-health-production.up.railway.app/api/cards/${widget.userId}'),
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ${widget.token}',
+          },
+          body: body,
+        );
+      } else {
+        // Edit 
+        response = await http.put(
+          Uri.parse('https://finance-health-production.up.railway.app/api/cards/${widget.userId}/${widget.cardToEdit?.id}'),
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ${widget.token}',
+          },
+          body: body,
+        );
+      }
 
       if (response.statusCode == 201 || response.statusCode == 200) {
         if (mounted) {
@@ -94,8 +138,9 @@ class _AddCardPageState extends State<AddCardPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isEditing = widget.cardToEdit != null;
     return Scaffold(
-      appBar: AppBar(title: const Text("Novo Cartão")),
+      appBar: AppBar(title: Text(isEditing ? "Editar Cartão" : "Novo Cartão")),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -143,7 +188,7 @@ class _AddCardPageState extends State<AddCardPage> {
                 onPressed: _isLoading ? null : _saveCard,
                 child: _isLoading 
                   ? const CircularProgressIndicator() 
-                  : const Text("Salvar Cartão"),
+                  : Text(isEditing ? "Atualizar Cartão" : "Salvar Cartão"),
               ),
             ],
           ),

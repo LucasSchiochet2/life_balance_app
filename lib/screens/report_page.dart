@@ -9,6 +9,7 @@ import 'login_page.dart';
 import 'add_bill_page.dart';
 import 'cards_page.dart';
 import 'workout_list_page.dart';
+import 'profile_page.dart';
 import '../components/CategoryChart.dart';
 import '../components/SummaryCard.dart';
 import '../components/MonthSelector.dart';
@@ -43,6 +44,9 @@ class _ReportPageState extends State<ReportPage> {
     Color(0xFF03A678),
     Color(0xFFF27405),
     Color(0xFF7928F5),
+    Color(0xFF3918CD),
+    Color(0xEE1918CD),
+    
   ];
 
   @override
@@ -232,6 +236,17 @@ Future<void> fetchBillsByCategory(int categoryId, String month) async {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => WorkoutListPage(token: widget.token, userId: widget.userId)),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.person),
+              title: const Text('Meu Perfil'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => ProfilePage(token: widget.token, userId: widget.userId)),
                 );
               },
             ),

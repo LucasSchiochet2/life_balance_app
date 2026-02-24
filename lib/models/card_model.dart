@@ -2,12 +2,16 @@ class CreditCard {
   final int id;
   final String name;
   final double limit;
+  final DateTime? closingDate;
+  final DateTime? expirationDate;
   final List<Invoice> invoices;
 
   CreditCard({
     required this.id,
     required this.name,
     required this.limit,
+    this.closingDate,
+    this.expirationDate,
     required this.invoices,
   });
 
@@ -20,6 +24,8 @@ class CreditCard {
       name: json['name'],
       // Handle int, double and String (API sometimes returns "500.00")
       limit: double.tryParse(json['limit'].toString()) ?? 0.0,
+      closingDate: json['closing_day'] != null ? DateTime.tryParse(json['closing_day'].toString()) : null,
+      expirationDate: json['expiration_date'] != null ? DateTime.tryParse(json['expiration_date'].toString()) : null,
       invoices: invoicesList,
     );
   }

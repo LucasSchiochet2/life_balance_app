@@ -55,8 +55,8 @@ class SalaryProgressBar extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   "Salário: R\$ ${monthlySpend.userSalary.toStringAsFixed(2)} / Gasto Total: R\$ ${monthlySpend.totalSpendForMonth.toStringAsFixed(2)}",

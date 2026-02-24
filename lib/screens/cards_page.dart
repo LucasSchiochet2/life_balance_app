@@ -86,7 +86,12 @@ class _CardsPageState extends State<CardsPage> {
                padding: const EdgeInsets.all(16),
                itemCount: cards.length,
                itemBuilder: (context, index) {
-                 return _CardItem(card: cards[index]);
+                 return _CardItem(
+                   card: cards[index],
+                   token: widget.token,
+                   userId: widget.userId,
+                   onEditSuccess: _fetchCards,
+                 );
                },
              ),
     );
@@ -95,7 +100,17 @@ class _CardsPageState extends State<CardsPage> {
 
 class _CardItem extends StatefulWidget {
   final CreditCard card;
-  const _CardItem({Key? key, required this.card}) : super(key: key);
+  final String token;
+  final int userId;
+  final VoidCallback onEditSuccess;
+
+  const _CardItem({
+    Key? key, 
+    required this.card,
+    required this.token,
+    required this.userId,
+    required this.onEditSuccess,
+  }) : super(key: key);
 
   @override
   State<_CardItem> createState() => _CardItemState();
@@ -120,6 +135,31 @@ class _CardItemState extends State<_CardItem> {
         title: Text(widget.card.name, style: const TextStyle(fontWeight: FontWeight.bold)),
         subtitle: Text("Limite: R\$ ${widget.card.limit.toStringAsFixed(2)}"),
         children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton.icon(
+                icon: const Icon(Icons.edit, size: 18),
+                label: const Text("Editar"),
+                onPressed: () async {
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => AddCardPage(
+                        token: widget.token,
+                        userId: widget.userId,
+                        cardToEdit: widget.card,
+                      ),
+                    ),
+                  );
+                  if (result == true) {
+                    widget.onEditSuccess();
+                  }
+                },
+              ),
+              const SizedBox(width: 8),
+            ],
+          ),
           if (invoices.isEmpty)
              const Padding(
                   padding: EdgeInsets.all(16.0),
