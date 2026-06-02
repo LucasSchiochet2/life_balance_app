@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:fl_chart/fl_chart.dart';
 import '../models/report_model.dart';
 import '../utils/background_service.dart';
 import 'login_page.dart';
@@ -16,6 +15,7 @@ import '../components/MonthSelector.dart';
 import '../components/GroupedBillList.dart';
 import '../models/monthly_spend_model.dart';
 import '../components/SalaryProgressBar.dart';
+import '../utils/category_icons.dart';
 
 class ReportPage extends StatefulWidget {
   final String token;
@@ -30,6 +30,8 @@ class ReportPage extends StatefulWidget {
 class _ReportPageState extends State<ReportPage> {
   late Future<ReportResponse> futureReport;
   late Future<List<MonthlySpend>> futureMonthlySpend;
+  final Map<String, Future<SpendingByCategoryResponse>> _spendingByCategoryCache = {};
+  bool _showOverallSpending = false;
 
   // Estados de Filtro
   int? touchedIndex;
@@ -39,13 +41,13 @@ class _ReportPageState extends State<ReportPage> {
   int selectedMonthIndex = 0;
 
   final List<Color> availableColors = const [
-    Color(0xFF014040),
-    Color(0xFF02735E),
-    Color(0xFF03A678),
-    Color(0xFFF27405),
-    Color(0xFF7928F5),
-    Color(0xFF3918CD),
-    Color(0xEE1918CD),
+    Color(0xFFD81B60),
+    Color(0xFFF06292),
+    Color(0xFFAD1457),
+    Color(0xFFF8BBD0),
+    Color(0xFFC2185B),
+    Color(0xFF880E4F),
+    Color(0xFFE91E63),
     
   ];
 
@@ -108,6 +110,64 @@ class _ReportPageState extends State<ReportPage> {
     } catch (e) {
       rethrow;
     }
+  }
+
+  Future<SpendingByCategoryResponse> fetchSpendingByCategory({String? month}) async {
+    try {
+      final uri = Uri.parse(
+        'https://finance-health-production.up.railway.app/api/bills/${widget.userId}/spending-by-category',
+      ).replace(
+        queryParameters: month != null ? {'month': month} : null,
+      );
+
+      final response = await http.get(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${widget.token}',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(response.body);
+        return SpendingByCategoryResponse.fromJson(decoded);
+      }
+      if (response.statusCode == 401) {
+        _logout();
+      }
+      throw Exception('Falha ao carregar gastos por categoria');
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<SpendingByCategoryResponse> _spendingByCategoryFuture(String reportMonth) {
+    final month = _showOverallSpending ? null : _monthQueryValue(reportMonth);
+    final key = month ?? 'geral';
+
+    return _spendingByCategoryCache.putIfAbsent(
+      key,
+      () => fetchSpendingByCategory(month: month),
+    );
+  }
+
+  String? _monthQueryValue(String value) {
+    final month = value.trim();
+    final isoMatch = RegExp(r'^\d{4}-\d{2}').firstMatch(month);
+    if (isoMatch != null) {
+      return isoMatch.group(0);
+    }
+
+    final parts = month.split('/');
+    if (parts.length >= 2) {
+      final monthNumber = int.tryParse(parts[0]);
+      final yearNumber = int.tryParse(parts[1]);
+      if (monthNumber != null && yearNumber != null) {
+        return '$yearNumber-${monthNumber.toString().padLeft(2, '0')}';
+      }
+    }
+
+    return null;
   }
 
   Future<void> _logout() async {
@@ -271,6 +331,8 @@ Future<void> fetchBillsByCategory(int categoryId, String month) async {
           if (result == true) {
             setState(() {
               futureReport = fetchReport();
+              futureMonthlySpend = fetchMonthlySpend();
+              _spendingByCategoryCache.clear();
               filteredBills = null;
               selectedCategoryId = null;
             });
@@ -305,6 +367,8 @@ Future<void> fetchBillsByCategory(int categoryId, String month) async {
                 ),
                 const SizedBox(height: 16),
                 SummaryCard(report: currentMonthData),
+                const SizedBox(height: 20),
+                _buildSpendingByCategorySection(currentMonthData.month),
                 const SizedBox(height: 20),
                 const Text("Distribuição por Categoria", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 CategoryChart(
@@ -387,6 +451,124 @@ Future<void> fetchBillsByCategory(int categoryId, String month) async {
       ),
     );
   }
+
+  Widget _buildSpendingByCategorySection(String reportMonth) {
+    return FutureBuilder<SpendingByCategoryResponse>(
+      future: _spendingByCategoryFuture(reportMonth),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return _buildSpendingByCategoryCard(
+            const Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        if (snapshot.hasError) {
+          return _buildSpendingByCategoryCard(
+            const Text("Erro ao carregar gastos por categoria."),
+          );
+        }
+
+        final spending = snapshot.data;
+        if (spending == null || spending.data.isEmpty) {
+          return _buildSpendingByCategoryCard(
+            const Text("Nenhum gasto por categoria encontrado."),
+          );
+        }
+
+        return _buildSpendingByCategoryCard(
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "${_showOverallSpending ? 'Geral' : _monthQueryValue(reportMonth) ?? reportMonth} - Total: R\$ ${spending.totalAmount.toStringAsFixed(2)} - ${spending.totalCount} contas",
+                style: TextStyle(color: Colors.grey[700], fontWeight: FontWeight.w500),
+              ),
+              const SizedBox(height: 16),
+              ...spending.data.asMap().entries.map((entry) {
+                final index = entry.key;
+                final item = entry.value;
+                final color = availableColors[index % availableColors.length];
+                final progress = (item.percentage / 100).clamp(0.0, 1.0).toDouble();
+
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 14),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              item.categoryName,
+                              style: const TextStyle(fontWeight: FontWeight.w600),
+                            ),
+                          ),
+                          Text(
+                            "R\$ ${item.totalAmount.toStringAsFixed(2)}",
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: LinearProgressIndicator(
+                          value: progress,
+                          minHeight: 10,
+                          backgroundColor: const Color(0xFFFFE4EE),
+                          valueColor: AlwaysStoppedAnimation<Color>(color),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        "${item.percentage.toStringAsFixed(2)}% - ${item.count} contas",
+                        style: TextStyle(fontSize: 12, color: Colors.grey[700]),
+                      ),
+                    ],
+                  ),
+                );
+              }),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildSpendingByCategoryCard(Widget child) {
+    return Card(
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              "Gastos por Categoria",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+            SegmentedButton<bool>(
+              segments: const [
+                ButtonSegment(value: false, label: Text("Mes")),
+                ButtonSegment(value: true, label: Text("Geral")),
+              ],
+              selected: {_showOverallSpending},
+              onSelectionChanged: (selection) {
+                setState(() {
+                  _showOverallSpending = selection.first;
+                });
+              },
+            ),
+            const SizedBox(height: 12),
+            child,
+          ],
+        ),
+      ),
+    );
+  }
+
   void _showBillDetails(Bill bill) {
     showDialog(
       context: context,
@@ -399,10 +581,11 @@ Future<void> fetchBillsByCategory(int categoryId, String month) async {
             Text("Valor: R\$ ${bill.amount.toStringAsFixed(2)}"),
             Text("Vencimento: ${bill.dueDate}"),
             if (bill.category != null) Text("Categoria: ${bill.category!.name}"),
+            Text("Tipo: ${_expenseTypeLabel(bill.categoryName)}"),
             if (bill.description.isNotEmpty) Text("Descrição: ${bill.description}"),
             const SizedBox(height: 10),
             Text("Status: ${bill.paid ? 'Pago' : 'Pendente'}", 
-              style: TextStyle(color: bill.paid ? const Color(0xFF03A678) : const Color(0xFFF27405), fontWeight: FontWeight.bold)),
+              style: TextStyle(color: bill.paid ? const Color(0xFFD81B60) : const Color(0xFFC2185B), fontWeight: FontWeight.bold)),
           ],
         ),
         actions: [
@@ -418,7 +601,7 @@ Future<void> fetchBillsByCategory(int categoryId, String month) async {
               Navigator.pop(ctx);
               _confirmDelete(bill);
             }, 
-            child: const Text("Excluir", style: TextStyle(color: Color(0xFFF27405))),
+            child: const Text("Excluir", style: TextStyle(color: Color(0xFFC2185B))),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx),
@@ -445,6 +628,20 @@ Future<void> fetchBillsByCategory(int categoryId, String month) async {
     }
   }
 
+  String _expenseTypeLabel(String value) {
+    final normalized = value
+        .trim()
+        .toLowerCase()
+        .replaceAll(RegExp(r'[\u00e1\u00e0\u00e3\u00e2\u00e4]'), 'a')
+        .replaceAll(RegExp(r'[\u00e9\u00e8\u00ea\u00eb]'), 'e')
+        .replaceAll(RegExp(r'[\u00ed\u00ec\u00ee\u00ef]'), 'i')
+        .replaceAll(RegExp(r'[\u00f3\u00f2\u00f5\u00f4\u00f6]'), 'o')
+        .replaceAll(RegExp(r'[\u00fa\u00f9\u00fb\u00fc]'), 'u')
+        .replaceAll(RegExp(r'[\u00e7]'), 'c');
+
+    return normalized == 'despesas fixas' ? 'Despesas Fixas' : 'Despesas Variaveis';
+  }
+
   Future<void> _confirmDelete(Bill bill) async {
 
     if (bill.isRecurring || bill.isInstallment) {
@@ -464,7 +661,7 @@ Future<void> fetchBillsByCategory(int categoryId, String month) async {
             ),
             TextButton(
               onPressed: () => Navigator.pop(ctx, 'all'), 
-              child: const Text("Excluir TODAS", style: TextStyle(color: Color(0xFFF27405)))
+              child: const Text("Excluir TODAS", style: TextStyle(color: Color(0xFFC2185B)))
             ),
           ],
         ),
@@ -482,7 +679,7 @@ Future<void> fetchBillsByCategory(int categoryId, String month) async {
           content: Text("Deseja realmente excluir a conta '${bill.name}'?"),
           actions: [
             TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text("Cancelar")),
-            TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text("Excluir", style: TextStyle(color: Color(0xFFF27405)))),
+            TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text("Excluir", style: TextStyle(color: Color(0xFFC2185B)))),
           ],
         ),
       );
@@ -524,6 +721,7 @@ Future<void> fetchBillsByCategory(int categoryId, String month) async {
     setState(() {
       futureReport = fetchReport();
       futureMonthlySpend = fetchMonthlySpend();
+      _spendingByCategoryCache.clear();
       // If we are seeing a filtered view, we should probably re-fetch that category too,
       // but simpler to just reset for now or let the user navigate again.
       // Or better: Re-fetch current selection if any.
@@ -566,7 +764,11 @@ class _BillTile extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
-        leading: Icon(bill.paid ? Icons.check_circle : Icons.pending, color: bill.paid ? Colors.green : Colors.orange),
+        leading: CircleAvatar(
+          backgroundColor: const Color(0xFFFFE4EE),
+          foregroundColor: const Color(0xFFD81B60),
+          child: Icon(billCategoryIcon(bill)),
+        ),
         title: Text(bill.name),
         subtitle: Text(bill.dueDate.split(' ')[0]),
         trailing: Text("R\$ ${bill.amount.toStringAsFixed(2)}", style: const TextStyle(fontWeight: FontWeight.bold)),

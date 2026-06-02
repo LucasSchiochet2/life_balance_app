@@ -33,6 +33,7 @@ class _AddBillPageState extends State<AddBillPage> {
   bool _isInstallment = false;
   bool _notificationEnabled = false;
   int _selectedCategoryId = 1;
+  String _selectedCategoryName = 'despesas variaveis';
   
   String _selectedPaymentMethod = 'money'; // Default. Options: money, credit_card, debit_card
   int? _selectedCardId;
@@ -49,6 +50,11 @@ class _AddBillPageState extends State<AddBillPage> {
     {'id': 8, 'name': 'Outros'},
   ];
 
+  final List<Map<String, String>> _expenseTypes = const [
+    {'value': 'despesas fixas', 'label': 'Despesas Fixas'},
+    {'value': 'despesas variaveis', 'label': 'Despesas Variaveis'},
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -60,11 +66,30 @@ class _AddBillPageState extends State<AddBillPage> {
       _dueDateController.text = bill.dueDate; 
       _descriptionController.text = bill.description;
       _selectedCategoryId = bill.categoryId;
+      _selectedCategoryName = _normalizeExpenseType(bill.categoryName);
       _isRecurring = bill.isRecurring;
       _isInstallment = bill.isInstallment;
       _notificationEnabled = bill.notificationEnabled;
       // Note: Payment details (credit card id etc) would populate here if available in Bill model
     }
+  }
+
+  String _normalizeExpenseType(String value) {
+    final normalized = value
+        .trim()
+        .toLowerCase()
+        .replaceAll(RegExp(r'[\u00e1\u00e0\u00e3\u00e2\u00e4]'), 'a')
+        .replaceAll(RegExp(r'[\u00e9\u00e8\u00ea\u00eb]'), 'e')
+        .replaceAll(RegExp(r'[\u00ed\u00ec\u00ee\u00ef]'), 'i')
+        .replaceAll(RegExp(r'[\u00f3\u00f2\u00f5\u00f4\u00f6]'), 'o')
+        .replaceAll(RegExp(r'[\u00fa\u00f9\u00fb\u00fc]'), 'u')
+        .replaceAll(RegExp(r'[\u00e7]'), 'c');
+
+    if (_expenseTypes.any((type) => type['value'] == normalized)) {
+      return normalized;
+    }
+
+    return 'despesas variaveis';
   }
 
   Future<void> _fetchCards() async {
@@ -153,6 +178,7 @@ class _AddBillPageState extends State<AddBillPage> {
           'due_date': _dueDateController.text,
           'description': _descriptionController.text,
           'category_bill_id': _selectedCategoryId,
+          'category_name': _selectedCategoryName,
           'is_recurring': _isRecurring ? 1 : 0,
           'is_installment': _isInstallment ? 1 : 0,
           'notification_enabled': _notificationEnabled ? 1 : 0,
@@ -322,6 +348,24 @@ class _AddBillPageState extends State<AddBillPage> {
                   onChanged: (val) {
                     setState(() {
                       _selectedCategoryId = val!;
+                    });
+                  },
+                ),
+
+                const SizedBox(height: 10),
+
+                DropdownButtonFormField<String>(
+                  value: _selectedCategoryName,
+                  decoration: const InputDecoration(labelText: "Tipo de Despesa"),
+                  items: _expenseTypes.map((type) {
+                    return DropdownMenuItem<String>(
+                      value: type['value'],
+                      child: Text(type['label']!),
+                    );
+                  }).toList(),
+                  onChanged: (val) {
+                    setState(() {
+                      _selectedCategoryName = val!;
                     });
                   },
                 ),

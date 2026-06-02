@@ -131,7 +131,7 @@ class _CardItemState extends State<_CardItem> {
       elevation: 3,
       margin: const EdgeInsets.only(bottom: 16),
       child: ExpansionTile(
-        leading: const Icon(Icons.credit_card, size: 32, color: Color(0xFF02735E)),
+        leading: const Icon(Icons.credit_card, size: 32, color: Color(0xFFD81B60)),
         title: Text(widget.card.name, style: const TextStyle(fontWeight: FontWeight.bold)),
         subtitle: Text("Limite: R\$ ${widget.card.limit.toStringAsFixed(2)}"),
         children: [
@@ -170,7 +170,7 @@ class _CardItemState extends State<_CardItem> {
                 return ExpansionTile(
                   title: Text("Fatura: ${invoice.month}"),
                   subtitle: Text("Total: R\$ ${invoice.totalAmount.toStringAsFixed(2)} (${invoice.count} contas)"),
-                  leading: const Icon(Icons.receipt_long, color: Color(0xFF014040)),
+                  leading: const Icon(Icons.receipt_long, color: Color(0xFF4A102A)),
                   children: invoice.bills.map((bill) {
                     return ListTile(
                       contentPadding: const EdgeInsets.only(left: 32, right: 16),

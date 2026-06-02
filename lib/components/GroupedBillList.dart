@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:fl_chart/fl_chart.dart';
 import '../models/report_model.dart';
+import '../utils/category_icons.dart';
+
 class GroupedBillList extends StatelessWidget {
   final List<Map<String, dynamic>>? groupedBills; 
   final List<Bill>? monthlyBills; // Mudei de flatBills para monthlyBills para bater com a ReportPage
@@ -29,7 +30,7 @@ class GroupedBillList extends StatelessWidget {
             children: [
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8.0),
-                child: Text(group['month'], style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF02735E))),
+                child: Text(group['month'], style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFD81B60))),
               ),
               ...group['bills'].map<Widget>((bill) => _BillTile(
                   bill: bill,
@@ -67,9 +68,13 @@ class _BillTile extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
         onTap: onTap,
-        leading: Icon(
-          bill.paid ? Icons.check_circle : Icons.pending, 
-          color: bill.paid ? const Color(0xFF03A678) : const Color(0xFFF27405)
+        leading: CircleAvatar(
+          backgroundColor: const Color(0xFFFFE4EE),
+          foregroundColor: const Color(0xFFD81B60),
+          child: Icon(
+            billCategoryIcon(bill),
+            size: 22,
+          ),
         ),
         title: Text(bill.name),
         subtitle: Text(bill.dueDate.split(' ')[0]),

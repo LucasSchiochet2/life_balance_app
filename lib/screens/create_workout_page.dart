@@ -97,7 +97,7 @@ class _CreateWorkoutPageState extends State<CreateWorkoutPage> {
         content: Text("Deseja realmente excluir '${exercise.name}'?"),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text("Cancelar")),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text("Excluir", style: TextStyle(color: Color(0xFFF27405)))),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text("Excluir", style: TextStyle(color: Color(0xFFC2185B)))),
         ],
       )
     );
@@ -310,7 +310,7 @@ class _CreateWorkoutPageState extends State<CreateWorkoutPage> {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 IconButton(
-                                    icon: const Icon(Icons.edit, size: 20, color: Color(0xFF02735E)),
+                                    icon: const Icon(Icons.edit, size: 20, color: Color(0xFFD81B60)),
                                     onPressed: () async {
                                        Navigator.pop(ctx);
                                        final result = await Navigator.push(
@@ -328,7 +328,7 @@ class _CreateWorkoutPageState extends State<CreateWorkoutPage> {
                                     }
                                 ),
                                 IconButton(
-                                    icon: const Icon(Icons.delete, size: 20, color: Color(0xFFF27405)),
+                                    icon: const Icon(Icons.delete, size: 20, color: Color(0xFFC2185B)),
                                     onPressed: () {
                                        Navigator.pop(ctx);
                                        _confirmDeleteExercise(ex);
@@ -404,7 +404,7 @@ class _CreateWorkoutPageState extends State<CreateWorkoutPage> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Text("Exercícios", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  IconButton(onPressed: _showAddExerciseDialog, icon: const Icon(Icons.add_circle, color: Color(0xFF02735E))),
+                  IconButton(onPressed: _showAddExerciseDialog, icon: const Icon(Icons.add_circle, color: Color(0xFFD81B60))),
                 ],
               ),
               Expanded(
@@ -427,7 +427,7 @@ class _CreateWorkoutPageState extends State<CreateWorkoutPage> {
                         title: Text("${_selectedExercises[index]['name']}"),
                         subtitle: Text("${_selectedExercises[index]['sets']} séries x ${_selectedExercises[index]['reps']} reps"),
                         trailing: IconButton(
-                          icon: const Icon(Icons.delete, color: Color(0xFFF27405)),
+                          icon: const Icon(Icons.delete, color: Color(0xFFC2185B)),
                           onPressed: () => _removeExercise(index),
                         ),
                       )

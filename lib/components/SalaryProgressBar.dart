@@ -25,11 +25,11 @@ class SalaryProgressBar extends StatelessWidget {
 
     Color progressColor;
     if (percentage < 0.5) {
-      progressColor = Colors.green;
+      progressColor = const Color(0xFFF06292);
     } else if (percentage < 0.8) {
-      progressColor = Colors.orange;
+      progressColor = const Color(0xFFD81B60);
     } else {
-      progressColor = Colors.red;
+      progressColor = const Color(0xFFC2185B);
     }
 
     return Card(
@@ -77,7 +77,7 @@ class SalaryProgressBar extends StatelessWidget {
             ),
             const Text(
               "Não considera gastos com cartão de crédito do mês atual.",
-              style: TextStyle(fontSize: 12, color: Colors.red),
+              style: TextStyle(fontSize: 12, color: Color(0xFFC2185B)),
             ),
           ],
         ),

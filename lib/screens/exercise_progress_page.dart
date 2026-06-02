@@ -301,7 +301,7 @@ class _ExerciseProgressPageState extends State<ExerciseProgressPage> {
                                 return FlSpot(e.key.toDouble(), e.value.weight);
                               }).toList(),
                               isCurved: true,
-                              color: const Color(0xFF02735E),
+                              color: const Color(0xFFD81B60),
                               barWidth: 3,
                               dotData: FlDotData(show: true),
                             ),

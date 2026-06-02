@@ -45,24 +45,24 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF02735E),
-          primary: const Color(0xFF02735E),
+          seedColor: const Color(0xFFD81B60),
+          primary: const Color(0xFFD81B60),
           onPrimary: Colors.white,
-          secondary: const Color(0xFF03A678),
+          secondary: const Color(0xFFF06292),
           onSecondary: Colors.white,
-          tertiary: const Color(0xFF7928F5),
-          error: const Color(0xFFF27405),
-          surface: Colors.white, // Keeping surface light for now
-          onSurface: const Color(0xFF014040), // Darkest color for text
+          tertiary: const Color(0xFFAD1457),
+          error: const Color(0xFFC2185B),
+          surface: Colors.white,
+          onSurface: const Color(0xFF4A102A),
         ),
         appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFF02735E),
+          backgroundColor: Color(0xFFD81B60),
           foregroundColor: Colors.white,
         ),
-        scaffoldBackgroundColor: const Color(0xFFF5F5F5), // Light grey background
+        scaffoldBackgroundColor: const Color(0xFFFFF0F6),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFFF27405), // Orange for buttons
+            backgroundColor: const Color(0xFFD81B60),
             foregroundColor: Colors.white,
           ),
         ),

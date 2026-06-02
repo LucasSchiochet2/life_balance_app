@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:fl_chart/fl_chart.dart';
 import '../models/report_model.dart';
 class SummaryCard extends StatelessWidget {
   final MonthlyReport report;
@@ -23,7 +22,7 @@ class SummaryCard extends StatelessWidget {
               const SizedBox(height: 6),
               Text(
                 "R\$ ${report.totalAmount.toStringAsFixed(2)}",
-                style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Color(0xFF02735E)),
+                style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Color(0xFFD81B60)),
               ),
               const SizedBox(height: 6),
               Text("${report.totalCount} transações", style: TextStyle(color: Colors.grey[600])),

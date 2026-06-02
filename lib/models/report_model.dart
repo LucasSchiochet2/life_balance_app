@@ -11,6 +11,51 @@ class ReportResponse {
   }
 }
 
+class SpendingByCategoryResponse {
+  final double totalAmount;
+  final int totalCount;
+  final List<SpendingByCategoryItem> data;
+
+  SpendingByCategoryResponse({
+    required this.totalAmount,
+    required this.totalCount,
+    required this.data,
+  });
+
+  factory SpendingByCategoryResponse.fromJson(Map<String, dynamic> json) {
+    return SpendingByCategoryResponse(
+      totalAmount: MonthlyReport._parseToDouble(json['total_amount']),
+      totalCount: int.tryParse(json['total_count'].toString()) ?? 0,
+      data: (json['data'] as List?)
+          ?.map((item) => SpendingByCategoryItem.fromJson(item))
+          .toList() ?? [],
+    );
+  }
+}
+
+class SpendingByCategoryItem {
+  final String categoryName;
+  final double totalAmount;
+  final double percentage;
+  final int count;
+
+  SpendingByCategoryItem({
+    required this.categoryName,
+    required this.totalAmount,
+    required this.percentage,
+    required this.count,
+  });
+
+  factory SpendingByCategoryItem.fromJson(Map<String, dynamic> json) {
+    return SpendingByCategoryItem(
+      categoryName: json['category_name']?.toString() ?? 'Categoria',
+      totalAmount: MonthlyReport._parseToDouble(json['total_amount']),
+      percentage: MonthlyReport._parseToDouble(json['percentage']),
+      count: int.tryParse(json['count'].toString()) ?? 0,
+    );
+  }
+}
+
 class MonthlyReport {
   final String month;
   final double totalAmount;
@@ -124,6 +169,7 @@ class Bill {
   final bool notificationEnabled;
   final String paymentMethod;
   final int categoryId;
+  final String categoryName;
   final Category? category;
 
   Bill({
@@ -138,6 +184,7 @@ class Bill {
     required this.notificationEnabled,
     required this.paymentMethod,
     required this.categoryId,
+    required this.categoryName,
     this.category,
   });
 
@@ -154,6 +201,7 @@ class Bill {
       notificationEnabled: json['notification_enabled'] == 1 || json['notification_enabled'] == true,
       paymentMethod: json['payment_method'] ?? 'unknown',
       categoryId: json['category_bill_id'] as int? ?? 0,
+      categoryName: json['category_name']?.toString() ?? 'despesas variaveis',
       category: json['category'] != null ? Category.fromJson(json['category']) : null,
     );
   }
