@@ -55,7 +55,7 @@ class _ReportPageState extends State<ReportPage> {
   ];
 
   String get _selectedBillType =>
-      _selectedBillTypeIndex == 0 ? 'fixa' : 'variavel';
+      _selectedBillTypeIndex == 0 ? 'despesas fixas' : 'despesas variaveis';
 
   String get _selectedBillTypeTitle =>
       _selectedBillTypeIndex == 0 ? 'Contas Fixas' : 'Contas Variaveis';
@@ -874,13 +874,9 @@ class _ReportPageState extends State<ReportPage> {
                   _showInvestmentActions = !_showInvestmentActions;
                 });
               },
-              child: ClipOval(
-                child: Image.asset(
-                  'assets/icon/poupig.png',
-                  width: 38,
-                  height: 38,
-                  fit: BoxFit.cover,
-                ),
+              child: const Icon(
+                Icons.savings,
+                size: 34,
               ),
             ),
             const SizedBox(width: 12),
