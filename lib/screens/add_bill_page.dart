@@ -8,12 +8,14 @@ class AddBillPage extends StatefulWidget {
   final String token;
   final int userId;
   final Bill? billToEdit;
+  final String? initialExpenseType;
 
   const AddBillPage({
-    super.key, 
-    required this.token, 
+    super.key,
+    required this.token,
     required this.userId,
     this.billToEdit,
+    this.initialExpenseType,
   });
 
   @override
@@ -25,17 +27,18 @@ class _AddBillPageState extends State<AddBillPage> {
   final _nameController = TextEditingController();
   final _amountController = TextEditingController();
   final _dueDateController = TextEditingController();
-  final _descriptionController = TextEditingController(); 
+  final _descriptionController = TextEditingController();
   final _installmentCountController = TextEditingController();
-  
+
   bool _isLoading = false;
   bool _isRecurring = false;
   bool _isInstallment = false;
   bool _notificationEnabled = false;
   int _selectedCategoryId = 1;
   String _selectedCategoryName = 'despesas variaveis';
-  
-  String _selectedPaymentMethod = 'money'; // Default. Options: money, credit_card, debit_card
+
+  String _selectedPaymentMethod =
+      'money'; // Default. Options: money, credit_card, debit_card
   int? _selectedCardId;
   List<CreditCard> _availableCards = [];
 
@@ -59,11 +62,14 @@ class _AddBillPageState extends State<AddBillPage> {
   void initState() {
     super.initState();
     _fetchCards(); // Fetch cards for selection
+    if (widget.initialExpenseType != null) {
+      _selectedCategoryName = _normalizeExpenseType(widget.initialExpenseType!);
+    }
     if (widget.billToEdit != null) {
       final bill = widget.billToEdit!;
       _nameController.text = bill.name;
       _amountController.text = bill.amount.toString();
-      _dueDateController.text = bill.dueDate; 
+      _dueDateController.text = bill.dueDate;
       _descriptionController.text = bill.description;
       _selectedCategoryId = bill.categoryId;
       _selectedCategoryName = _normalizeExpenseType(bill.categoryName);
@@ -95,7 +101,9 @@ class _AddBillPageState extends State<AddBillPage> {
   Future<void> _fetchCards() async {
     try {
       final response = await http.get(
-        Uri.parse('https://finance-health-production.up.railway.app/api/cards/${widget.userId}'),
+        Uri.parse(
+          'https://finance-health-production.up.railway.app/api/cards/${widget.userId}',
+        ),
         // Uri.parse('http://finance-health.test/api/cards/${widget.userId}'),
         headers: {
           'Content-Type': 'application/json',
@@ -106,10 +114,12 @@ class _AddBillPageState extends State<AddBillPage> {
       if (response.statusCode == 200) {
         final decoded = jsonDecode(response.body);
         if (decoded is Map && decoded['data'] is List) {
-           final List data = decoded['data'];
-           setState(() {
-             _availableCards = data.map((json) => CreditCard.fromJson(json)).toList();
-           });
+          final List data = decoded['data'];
+          setState(() {
+            _availableCards = data
+                .map((json) => CreditCard.fromJson(json))
+                .toList();
+          });
         }
       }
     } catch (e) {
@@ -134,31 +144,38 @@ class _AddBillPageState extends State<AddBillPage> {
     bool updateAll = false;
 
     // Se estiver editando e for recorrente ou parcela
-    if (isEditing && (widget.billToEdit!.isRecurring || widget.billToEdit!.isInstallment)) {
-        final result = await showDialog<String>(
-          context: context,
-          builder: (ctx) => AlertDialog(
-            title: Text(widget.billToEdit!.isInstallment ? "Atualizar Parcelas" : "Atualizar Recorrência"),
-            content: Text("Esta conta é ${widget.billToEdit!.isInstallment ? 'parcelada' : 'recorrente'}. Como deseja salvar as alterações?"),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, 'cancel'),
-                child: const Text("Cancelar")
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, 'single'),
-                child: const Text("Apenas esta")
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, 'all'),
-                child: const Text("Todas futuras")
-              ),
-            ],
+    if (isEditing &&
+        (widget.billToEdit!.isRecurring || widget.billToEdit!.isInstallment)) {
+      final result = await showDialog<String>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text(
+            widget.billToEdit!.isInstallment
+                ? "Atualizar Parcelas"
+                : "Atualizar Recorrência",
           ),
-        );
+          content: Text(
+            "Esta conta é ${widget.billToEdit!.isInstallment ? 'parcelada' : 'recorrente'}. Como deseja salvar as alterações?",
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, 'cancel'),
+              child: const Text("Cancelar"),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, 'single'),
+              child: const Text("Apenas esta"),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, 'all'),
+              child: const Text("Todas futuras"),
+            ),
+          ],
+        ),
+      );
 
-        if (result == 'cancel' || result == null) return;
-        if (result == 'all') updateAll = true;
+      if (result == 'cancel' || result == null) return;
+      if (result == 'all') updateAll = true;
     }
 
     setState(() {
@@ -168,25 +185,33 @@ class _AddBillPageState extends State<AddBillPage> {
     //     ? Uri.parse('http://finance-health.test/api/bills/${widget.userId}/${widget.billToEdit!.id}')
     //     : Uri.parse('http://finance-health.test/api/bills/${widget.userId}');
     final url = isEditing
-        ? Uri.parse('https://finance-health-production.up.railway.app/api/bills/${widget.userId}/${widget.billToEdit!.id}')
-        : Uri.parse('https://finance-health-production.up.railway.app/api/bills/${widget.userId}');
+        ? Uri.parse(
+            'https://finance-health-production.up.railway.app/api/bills/${widget.userId}/${widget.billToEdit!.id}',
+          )
+        : Uri.parse(
+            'https://finance-health-production.up.railway.app/api/bills/${widget.userId}',
+          );
 
     try {
       final bodyMap = {
-          'name': _nameController.text,
-          'amount': double.tryParse(_amountController.text) ?? 0.0,
-          'due_date': _dueDateController.text,
-          'description': _descriptionController.text,
-          'category_bill_id': _selectedCategoryId,
-          'category_name': _selectedCategoryName,
-          'is_recurring': _isRecurring ? 1 : 0,
-          'is_installment': _isInstallment ? 1 : 0,
-          'notification_enabled': _notificationEnabled ? 1 : 0,
-          'installment_count': _isInstallment ? int.tryParse(_installmentCountController.text) : null,
-          'paid': isEditing ? (widget.billToEdit!.paid ? 1 : 0) : 0,
-          'payment_method': _selectedPaymentMethod,
-          'credit_card_id': _selectedPaymentMethod == 'credit_card' ? _selectedCardId : null,
-          'user_id': widget.userId 
+        'name': _nameController.text,
+        'amount': double.tryParse(_amountController.text) ?? 0.0,
+        'due_date': _dueDateController.text,
+        'description': _descriptionController.text,
+        'category_bill_id': _selectedCategoryId,
+        'category_name': _selectedCategoryName,
+        'is_recurring': _isRecurring ? 1 : 0,
+        'is_installment': _isInstallment ? 1 : 0,
+        'notification_enabled': _notificationEnabled ? 1 : 0,
+        'installment_count': _isInstallment
+            ? int.tryParse(_installmentCountController.text)
+            : null,
+        'paid': isEditing ? (widget.billToEdit!.paid ? 1 : 0) : 0,
+        'payment_method': _selectedPaymentMethod,
+        'credit_card_id': _selectedPaymentMethod == 'credit_card'
+            ? _selectedCardId
+            : null,
+        'user_id': widget.userId,
       };
 
       if (updateAll) {
@@ -215,35 +240,45 @@ class _AddBillPageState extends State<AddBillPage> {
 
       if (response.statusCode == 201 || response.statusCode == 200) {
         if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(isEditing ? 'Conta atualizada!' : 'Conta adicionada com sucesso!')),
-            );
-            Navigator.pop(context, true); 
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                isEditing
+                    ? 'Conta atualizada!'
+                    : 'Conta adicionada com sucesso!',
+              ),
+            ),
+          );
+          Navigator.pop(context, true);
         }
       } else {
-         if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Erro ao ${isEditing ? "atualizar" : "adicionar"}: ${response.body}')),
-            );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Erro ao ${isEditing ? "atualizar" : "adicionar"}: ${response.body}',
+              ),
+            ),
+          );
         }
       }
-
     } catch (e) {
       if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Erro: $e')),
-          );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Erro: $e')));
       }
     } finally {
-        if (mounted) setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(widget.billToEdit != null ? "Editar Conta" : "Nova Conta")),
+      appBar: AppBar(
+        title: Text(widget.billToEdit != null ? "Editar Conta" : "Nova Conta"),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -254,71 +289,90 @@ class _AddBillPageState extends State<AddBillPage> {
                 TextFormField(
                   controller: _nameController,
                   decoration: const InputDecoration(labelText: "Nome da Conta"),
-                  validator: (value) => value == null || value.isEmpty ? "Campo obrigatório" : null,
+                  validator: (value) => value == null || value.isEmpty
+                      ? "Campo obrigatório"
+                      : null,
                 ),
                 TextFormField(
                   controller: _amountController,
                   decoration: const InputDecoration(labelText: "Valor (R\$)"),
                   keyboardType: TextInputType.numberWithOptions(decimal: true),
-                  validator: (value) => value == null || value.isEmpty ? "Campo obrigatório" : null,
+                  validator: (value) => value == null || value.isEmpty
+                      ? "Campo obrigatório"
+                      : null,
                 ),
                 TextFormField(
                   controller: _descriptionController,
-                  decoration: const InputDecoration(labelText: "Descrição (Opcional)"),
+                  decoration: const InputDecoration(
+                    labelText: "Descrição (Opcional)",
+                  ),
                 ),
                 TextFormField(
                   controller: _dueDateController,
                   decoration: const InputDecoration(
-                      labelText: "Data de Vencimento / Compra",
-                      suffixIcon: Icon(Icons.calendar_today),
+                    labelText: "Data de Vencimento / Compra",
+                    suffixIcon: Icon(Icons.calendar_today),
                   ),
                   readOnly: true,
                   onTap: () async {
-                      DateTime? pickedDate = await showDatePicker(
-                          context: context,
-                          initialDate: DateTime.now(),
-                          firstDate: DateTime(2000),
-                          lastDate: DateTime(2101)
-                      );
-                      if(pickedDate != null ){
-                        // Format as YYYY-MM-DD
-                        String formattedDate = "${pickedDate.year}-${pickedDate.month.toString().padLeft(2,'0')}-${pickedDate.day.toString().padLeft(2,'0')}";
-                          setState(() {
-                             _dueDateController.text = formattedDate;
-                          });
-                      }
+                    DateTime? pickedDate = await showDatePicker(
+                      context: context,
+                      initialDate: DateTime.now(),
+                      firstDate: DateTime(2000),
+                      lastDate: DateTime(2101),
+                    );
+                    if (pickedDate != null) {
+                      // Format as YYYY-MM-DD
+                      String formattedDate =
+                          "${pickedDate.year}-${pickedDate.month.toString().padLeft(2, '0')}-${pickedDate.day.toString().padLeft(2, '0')}";
+                      setState(() {
+                        _dueDateController.text = formattedDate;
+                      });
+                    }
                   },
-                  validator: (value) => value == null || value.isEmpty ? "Campo obrigatório" : null,
+                  validator: (value) => value == null || value.isEmpty
+                      ? "Campo obrigatório"
+                      : null,
                 ),
-                
+
                 const SizedBox(height: 10),
 
                 // Payment Method Dropdown
                 DropdownButtonFormField<String>(
                   value: _selectedPaymentMethod,
-                  decoration: const InputDecoration(labelText: "Método de Pagamento"),
+                  decoration: const InputDecoration(
+                    labelText: "Método de Pagamento",
+                  ),
                   items: const [
-                    DropdownMenuItem(value: 'money', child: Text("Dinheiro / Débito / Pix")),
-                    DropdownMenuItem(value: 'credit_card', child: Text("Cartão de Crédito")),
+                    DropdownMenuItem(
+                      value: 'money',
+                      child: Text("Dinheiro / Débito / Pix"),
+                    ),
+                    DropdownMenuItem(
+                      value: 'credit_card',
+                      child: Text("Cartão de Crédito"),
+                    ),
                   ],
                   onChanged: (val) {
                     setState(() {
                       _selectedPaymentMethod = val!;
                       // Reset recurrence/installment logic if needed based on payment type
                       if (val == 'credit_card') {
-                         // Maybe default to single installment if not installment
+                        // Maybe default to single installment if not installment
                       }
                     });
                   },
                 ),
 
                 // Credit Card Selection (Only if credit_card)
-                if (_selectedPaymentMethod == 'credit_card') 
-                   Padding(
-                     padding: const EdgeInsets.only(top: 10.0),
-                     child: DropdownButtonFormField<int>(
+                if (_selectedPaymentMethod == 'credit_card')
+                  Padding(
+                    padding: const EdgeInsets.only(top: 10.0),
+                    child: DropdownButtonFormField<int>(
                       value: _selectedCardId,
-                      decoration: const InputDecoration(labelText: "Selecione o Cartão"),
+                      decoration: const InputDecoration(
+                        labelText: "Selecione o Cartão",
+                      ),
                       items: _availableCards.map((card) {
                         return DropdownMenuItem<int>(
                           value: card.id,
@@ -330,12 +384,15 @@ class _AddBillPageState extends State<AddBillPage> {
                           _selectedCardId = val;
                         });
                       },
-                      validator: (val) => _selectedPaymentMethod == 'credit_card' && val == null ? 'Selecione um cartão' : null,
-                                       ),
-                   ),
+                      validator: (val) =>
+                          _selectedPaymentMethod == 'credit_card' && val == null
+                          ? 'Selecione um cartão'
+                          : null,
+                    ),
+                  ),
 
                 const SizedBox(height: 10),
-            
+
                 DropdownButtonFormField<int>(
                   value: _selectedCategoryId,
                   decoration: const InputDecoration(labelText: "Categoria"),
@@ -356,7 +413,9 @@ class _AddBillPageState extends State<AddBillPage> {
 
                 DropdownButtonFormField<String>(
                   value: _selectedCategoryName,
-                  decoration: const InputDecoration(labelText: "Tipo de Despesa"),
+                  decoration: const InputDecoration(
+                    labelText: "Tipo de Despesa",
+                  ),
                   items: _expenseTypes.map((type) {
                     return DropdownMenuItem<String>(
                       value: type['value'],
@@ -369,7 +428,7 @@ class _AddBillPageState extends State<AddBillPage> {
                     });
                   },
                 ),
-                
+
                 const SizedBox(height: 10),
                 SwitchListTile(
                   title: const Text("Conta Recorrente (Mensal)"),
@@ -377,7 +436,10 @@ class _AddBillPageState extends State<AddBillPage> {
                   onChanged: (val) {
                     setState(() {
                       _isRecurring = val;
-                      if (val) _isInstallment = false; // Usually mutually exclusive or handled differently
+                      if (val) {
+                        _isInstallment =
+                            false; // Usually mutually exclusive or handled differently
+                      }
                     });
                   },
                 ),
@@ -406,10 +468,13 @@ class _AddBillPageState extends State<AddBillPage> {
                 if (_isInstallment)
                   TextFormField(
                     controller: _installmentCountController,
-                    decoration: const InputDecoration(labelText: "Número de Parcelas"),
+                    decoration: const InputDecoration(
+                      labelText: "Número de Parcelas",
+                    ),
                     keyboardType: TextInputType.number,
-                    validator: (value) => _isInstallment && (value == null || value.isEmpty) 
-                        ? "Informe o número de parcelas" 
+                    validator: (value) =>
+                        _isInstallment && (value == null || value.isEmpty)
+                        ? "Informe o número de parcelas"
                         : null,
                   ),
 
@@ -418,18 +483,20 @@ class _AddBillPageState extends State<AddBillPage> {
                     padding: EdgeInsets.symmetric(vertical: 8.0),
                     child: Text(
                       "Nota: O valor informado acima será considerado o valor de cada parcela.",
-                      style: TextStyle(color: Colors.grey, fontStyle: FontStyle.italic),
+                      style: TextStyle(
+                        color: Colors.grey,
+                        fontStyle: FontStyle.italic,
+                      ),
                     ),
                   ),
 
-
                 const SizedBox(height: 20),
-                _isLoading 
-                  ? const CircularProgressIndicator()
-                  : ElevatedButton(
-                      onPressed: _submit,
-                      child: const Text("Salvar Conta"),
-                    )
+                _isLoading
+                    ? const CircularProgressIndicator()
+                    : ElevatedButton(
+                        onPressed: _submit,
+                        child: const Text("Salvar Conta"),
+                      ),
               ],
             ),
           ),

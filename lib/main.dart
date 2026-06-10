@@ -79,7 +79,7 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Life Balance App'),
+        title: const Text('Poupig'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
